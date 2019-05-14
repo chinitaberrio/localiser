@@ -1,0 +1,29 @@
+\hypertarget{classSimple__graph}{}\section{Simple\+\_\+graph Class Reference}
+\label{classSimple__graph}\index{Simple\+\_\+graph@{Simple\+\_\+graph}}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classSimple__graph_a62344f211bd74de6ff43d9a58f0dd60c}\label{classSimple__graph_a62344f211bd74de6ff43d9a58f0dd60c}} 
+{\bfseries Simple\+\_\+graph} (float gps\+\_\+interval, Sparse\+Optimizer $\ast$global\+\_\+optimizer\+\_\+ptr)
+\item 
+\mbox{\Hypertarget{classSimple__graph_ae152a92b73c6a25c23d43e3e883806ec}\label{classSimple__graph_ae152a92b73c6a25c23d43e3e883806ec}} 
+\hyperlink{structSimple__node}{Simple\+\_\+node} $\ast$ {\bfseries propose\+\_\+new\+\_\+node} (double easting, double northing, \hyperlink{structSimple__node}{Simple\+\_\+node} $\ast$current\+\_\+node, unsigned int robot\+\_\+pose\+\_\+id, bool \&added\+\_\+new\+\_\+node)
+\item 
+\mbox{\Hypertarget{classSimple__graph_aa0f34774a8e313ab1f8cf15a6e8bd2be}\label{classSimple__graph_aa0f34774a8e313ab1f8cf15a6e8bd2be}} 
+\hyperlink{structSimple__node}{Simple\+\_\+node} $\ast$ {\bfseries insert\+Node} (double easting, double northing, unsigned int robot\+\_\+pose\+\_\+id)
+\item 
+\mbox{\Hypertarget{classSimple__graph_ad056ec6e053c97da0d476181a51dfaaf}\label{classSimple__graph_ad056ec6e053c97da0d476181a51dfaaf}} 
+void {\bfseries insert\+Edge} (unsigned int node\+\_\+id\+\_\+1, unsigned int node\+\_\+id\+\_\+2)
+\item 
+\mbox{\Hypertarget{classSimple__graph_a20b92b58d524ee4c1dd4a8cb02378e3a}\label{classSimple__graph_a20b92b58d524ee4c1dd4a8cb02378e3a}} 
+unsigned int {\bfseries size} ()
+\item 
+\mbox{\Hypertarget{classSimple__graph_a7aad6c39497e7e5afde5a5e55a518c8a}\label{classSimple__graph_a7aad6c39497e7e5afde5a5e55a518c8a}} 
+void {\bfseries B\+F\+S\+Load\+Simplemap} (mrpt\+::maps\+::\+C\+Simple\+Points\+Map \&landmark\+\_\+map, unsigned int query\+\_\+node\+\_\+id, int terminate\+\_\+depth, std\+::map$<$ unsigned int, std\+::pair$<$ unsigned int, unsigned int $>$$>$ \&corresponding\+\_\+id)
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/home/stew/src/catkin/src/localiser/include/localiser/simple\+\_\+graph.\+h\item 
+/home/stew/src/catkin/src/localiser/src/simple\+\_\+graph.\+cpp\end{DoxyCompactItemize}

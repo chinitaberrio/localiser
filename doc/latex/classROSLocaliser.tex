@@ -1,0 +1,53 @@
+\hypertarget{classROSLocaliser}{}\section{R\+O\+S\+Localiser Class Reference}
+\label{classROSLocaliser}\index{R\+O\+S\+Localiser@{R\+O\+S\+Localiser}}
+
+
+The class that manages the localisation process.  
+
+
+
+
+{\ttfamily \#include $<$ros\+\_\+localiser.\+hpp$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classROSLocaliser_a87eb20c0496eb78fbf79b02047b0583d}\label{classROSLocaliser_a87eb20c0496eb78fbf79b02047b0583d}} 
+void {\bfseries Initialise} ()
+\item 
+\mbox{\Hypertarget{classROSLocaliser_a3b64a321509d2c85146ea469d544f8c8}\label{classROSLocaliser_a3b64a321509d2c85146ea469d544f8c8}} 
+void \hyperlink{classROSLocaliser_a3b64a321509d2c85146ea469d544f8c8}{Publish\+Odometry} (Eigen\+::\+Vector3d \&odometry, Eigen\+::\+Vector3d \&covariance, ros\+::\+Time stamp)
+\begin{DoxyCompactList}\small\item\em Perform the prediction. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classROSLocaliser_abe99883c01170dfcc60a88b88328ae32}\label{classROSLocaliser_abe99883c01170dfcc60a88b88328ae32}} 
+std\+::shared\+\_\+ptr$<$ \hyperlink{classLocaliser}{Localiser} $>$ {\bfseries localiser}
+\item 
+\mbox{\Hypertarget{classROSLocaliser_a44b1094cd2f22b428c749a40ba1448cc}\label{classROSLocaliser_a44b1094cd2f22b428c749a40ba1448cc}} 
+std\+::vector$<$ ros\+::\+Subscriber $>$ {\bfseries subscribers}
+\item 
+\mbox{\Hypertarget{classROSLocaliser_a58e3e5be6d6fc11358d603891592c49e}\label{classROSLocaliser_a58e3e5be6d6fc11358d603891592c49e}} 
+std\+::shared\+\_\+ptr$<$ \hyperlink{classImuMeasurement}{Imu\+Measurement} $>$ {\bfseries imu}
+\item 
+\mbox{\Hypertarget{classROSLocaliser_a3fc7a190f5a5d5655a28c2b4b4f1289f}\label{classROSLocaliser_a3fc7a190f5a5d5655a28c2b4b4f1289f}} 
+std\+::shared\+\_\+ptr$<$ \hyperlink{classSpeedMeasurement}{Speed\+Measurement} $>$ {\bfseries speed}
+\item 
+\mbox{\Hypertarget{classROSLocaliser_ac03dc811fd3ab83a58b1d0b4622aae59}\label{classROSLocaliser_ac03dc811fd3ab83a58b1d0b4622aae59}} 
+std\+::shared\+\_\+ptr$<$ \hyperlink{classICPObservation}{I\+C\+P\+Observation} $>$ {\bfseries map\+\_\+icp}
+\item 
+\mbox{\Hypertarget{classROSLocaliser_a3d8f0d6a48173cbde2bb7197992cf720}\label{classROSLocaliser_a3d8f0d6a48173cbde2bb7197992cf720}} 
+std\+::shared\+\_\+ptr$<$ \hyperlink{classGNSSObservation}{G\+N\+S\+S\+Observation} $>$ {\bfseries gnss}
+\item 
+\mbox{\Hypertarget{classROSLocaliser_ab4def0822d196c1693033bac76c834b7}\label{classROSLocaliser_ab4def0822d196c1693033bac76c834b7}} 
+std\+::shared\+\_\+ptr$<$ \hyperlink{classGraphOptimiser}{Graph\+Optimiser} $>$ {\bfseries graph\+\_\+optimiser}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+The class that manages the localisation process. 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/home/stew/src/catkin/src/localiser/include/localiser/ros\+\_\+localiser.\+hpp\item 
+/home/stew/src/catkin/src/localiser/src/ros\+\_\+localiser.\+cpp\end{DoxyCompactItemize}

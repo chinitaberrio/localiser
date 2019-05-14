@@ -1,0 +1,114 @@
+\hypertarget{classGraphOptimiser}{}\section{Graph\+Optimiser Class Reference}
+\label{classGraphOptimiser}\index{Graph\+Optimiser@{Graph\+Optimiser}}
+
+
+Optimise a graph of poses Optimises a graph structure containing poses linked by relative motion, with additional edges for global observations.  
+
+
+
+
+{\ttfamily \#include $<$graph\+\_\+optimiser.\+hpp$>$}
+
+
+
+Inheritance diagram for Graph\+Optimiser\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=181pt]{classGraphOptimiser__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for Graph\+Optimiser\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=181pt]{classGraphOptimiser__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classGraphOptimiser_a986c07622d992bcf4ea4b6711a025b5e}\label{classGraphOptimiser_a986c07622d992bcf4ea4b6711a025b5e}} 
+void {\bfseries Run\+Optimiser} ()
+\item 
+Eigen\+::\+Vector3d \hyperlink{classGraphOptimiser_a3310a9869b3cec56fb9ccc6a0c944e15}{Vehicle\+Model} (Eigen\+::\+Vector3d \&current\+\_\+pose, Eigen\+::\+Vector2d \&motion\+\_\+delta)
+\item 
+void \hyperlink{classGraphOptimiser_ad856bbb20088fae667b00f8ef0355f32}{Add\+Relative\+Motion} (Eigen\+::\+Vector2d \&motion, Eigen\+::\+Vector2d \&covariance, ros\+::\+Time stamp)
+\begin{DoxyCompactList}\small\item\em Perform the optimisation. \end{DoxyCompactList}\item 
+void \hyperlink{classGraphOptimiser_addfbfde9e277dd61876e64fd23c7eae8}{Add\+Absolute\+Position} (Eigen\+::\+Vector3d \&observation, Eigen\+::\+Vector3d \&covariance, ros\+::\+Time stamp)
+\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classGraphOptimiser_ad1b6ee44cbaa3b3d2817d62acbdfd7d6}\label{classGraphOptimiser_ad1b6ee44cbaa3b3d2817d62acbdfd7d6}} 
+Eigen\+::\+Matrix3d {\bfseries gps\+\_\+information}
+\item 
+\mbox{\Hypertarget{classGraphOptimiser_a1fae664a0b8570d2f88392662dde3710}\label{classGraphOptimiser_a1fae664a0b8570d2f88392662dde3710}} 
+mrpt\+::obs\+::\+C\+Action\+Robot\+Movement2\+D\+::\+T\+Motion\+Model\+Options {\bfseries motion\+\_\+model\+\_\+options\+\_\+}
+\item 
+\mbox{\Hypertarget{classGraphOptimiser_a6247045a0b2757e02690a8e98ef71b03}\label{classGraphOptimiser_a6247045a0b2757e02690a8e98ef71b03}} 
+g2o\+::\+Vertex\+S\+E2 $\ast$ {\bfseries origin}
+\item 
+\mbox{\Hypertarget{classGraphOptimiser_ab1f61ad8e5e6c8bada0263942b1b068c}\label{classGraphOptimiser_ab1f61ad8e5e6c8bada0263942b1b068c}} 
+uint32\+\_\+t {\bfseries current\+\_\+index}
+\item 
+\mbox{\Hypertarget{classGraphOptimiser_a240a79573703fa7c1c6ab1ddb7dfc601}\label{classGraphOptimiser_a240a79573703fa7c1c6ab1ddb7dfc601}} 
+double {\bfseries datum\+\_\+x}
+\item 
+\mbox{\Hypertarget{classGraphOptimiser_a36a019181bf4711ba275398413eff289}\label{classGraphOptimiser_a36a019181bf4711ba275398413eff289}} 
+double {\bfseries datum\+\_\+y}
+\item 
+\mbox{\Hypertarget{classGraphOptimiser_a6eb72ad8bf9d692c2b0daf64f45c8cce}\label{classGraphOptimiser_a6eb72ad8bf9d692c2b0daf64f45c8cce}} 
+uint32\+\_\+t {\bfseries previous\+\_\+odom\+\_\+vertex\+\_\+id}
+\item 
+\mbox{\Hypertarget{classGraphOptimiser_ad4772e6892e2c1cfca68bfbdce804c6e}\label{classGraphOptimiser_ad4772e6892e2c1cfca68bfbdce804c6e}} 
+g2o\+::\+Sparse\+Optimizer {\bfseries global\+\_\+optimizer}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Optimise a graph of poses Optimises a graph structure containing poses linked by relative motion, with additional edges for global observations. 
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classGraphOptimiser_addfbfde9e277dd61876e64fd23c7eae8}\label{classGraphOptimiser_addfbfde9e277dd61876e64fd23c7eae8}} 
+\index{Graph\+Optimiser@{Graph\+Optimiser}!Add\+Absolute\+Position@{Add\+Absolute\+Position}}
+\index{Add\+Absolute\+Position@{Add\+Absolute\+Position}!Graph\+Optimiser@{Graph\+Optimiser}}
+\subsubsection{\texorpdfstring{Add\+Absolute\+Position()}{AddAbsolutePosition()}}
+{\footnotesize\ttfamily void Graph\+Optimiser\+::\+Add\+Absolute\+Position (\begin{DoxyParamCaption}\item[{Eigen\+::\+Vector3d \&}]{observation,  }\item[{Eigen\+::\+Vector3d \&}]{covariance,  }\item[{ros\+::\+Time}]{stamp }\end{DoxyParamCaption})}
+
+T\+O\+DO\+: don\textquotesingle{}t assume it fits with the latest odom \mbox{\Hypertarget{classGraphOptimiser_ad856bbb20088fae667b00f8ef0355f32}\label{classGraphOptimiser_ad856bbb20088fae667b00f8ef0355f32}} 
+\index{Graph\+Optimiser@{Graph\+Optimiser}!Add\+Relative\+Motion@{Add\+Relative\+Motion}}
+\index{Add\+Relative\+Motion@{Add\+Relative\+Motion}!Graph\+Optimiser@{Graph\+Optimiser}}
+\subsubsection{\texorpdfstring{Add\+Relative\+Motion()}{AddRelativeMotion()}}
+{\footnotesize\ttfamily void Graph\+Optimiser\+::\+Add\+Relative\+Motion (\begin{DoxyParamCaption}\item[{Eigen\+::\+Vector2d \&}]{motion,  }\item[{Eigen\+::\+Vector2d \&}]{covariance,  }\item[{ros\+::\+Time}]{stamp }\end{DoxyParamCaption})}
+
+
+
+Perform the optimisation. 
+
+Use a fixed delta\+\_\+t (100\+Hz) until the timing issues with the vectornav is fixed
+
+determine the uncertainty of the delta motion T\+O\+DO\+: need to come up with a correct uncertainty measurement -\/ the position uncertainty should be also a function of the rate of rotation ? \mbox{\Hypertarget{classGraphOptimiser_a3310a9869b3cec56fb9ccc6a0c944e15}\label{classGraphOptimiser_a3310a9869b3cec56fb9ccc6a0c944e15}} 
+\index{Graph\+Optimiser@{Graph\+Optimiser}!Vehicle\+Model@{Vehicle\+Model}}
+\index{Vehicle\+Model@{Vehicle\+Model}!Graph\+Optimiser@{Graph\+Optimiser}}
+\subsubsection{\texorpdfstring{Vehicle\+Model()}{VehicleModel()}}
+{\footnotesize\ttfamily Eigen\+::\+Vector3d Graph\+Optimiser\+::\+Vehicle\+Model (\begin{DoxyParamCaption}\item[{Eigen\+::\+Vector3d \&}]{current\+\_\+pose,  }\item[{Eigen\+::\+Vector2d \&}]{motion\+\_\+delta }\end{DoxyParamCaption})}
+
+Vehicle transition model.
+
+Transition function for the vehicle model
+
+Args\+: current\+\_\+pose (Euler\+::\+Vector3d)\+: state \mbox{[}x (meters), y (meters), heading (radians)\mbox{]}
+
+motion (Eigen\+::\+Vector2d)\+: \mbox{[}delta\+\_\+position (meters), delta\+\_\+heading (radians)\mbox{]}
+
+av\+\_\+heading is the average heading for the time period 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/home/stew/src/catkin/src/localiser/include/localiser/graph\+\_\+optimiser.\+hpp\item 
+/home/stew/src/catkin/src/localiser/src/graph\+\_\+optimiser.\+cpp\end{DoxyCompactItemize}
