@@ -56,6 +56,7 @@ find_package(catkin REQUIRED COMPONENTS
 #endif()
 
 find_package(Eigen3 REQUIRED)
+find_package(GTSAM REQUIRED)
 
 # Set search directory for looking for our custom CMake scripts to
 # look for SuiteSparse, QGLViewer, and Eigen3.
@@ -82,7 +83,7 @@ include_directories(
   ${CSPARSE_INCLUDE_DIR}
   ${G2O_INCLUDE_DIRS}
     ${MRPT_LIBS}
-
+  gtsam
   include/${PROJECT_NAME}
 )
 
@@ -120,6 +121,7 @@ add_executable(${PROJECT_NAME}
     src/localisation_method.cpp
     src/linear_filter.cpp
     src/graph_optimiser.cpp
+    src/gtsam_optimiser.cpp
     #src/icp_map_maker.cpp
 )
 #add_executable(edit_g2o
@@ -152,8 +154,10 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME}
  ${G2O_SOLVER_CHOLMOD}
  ${G2O_SOLVER_CSPARSE}
  ${G2O_SOLVER_CSPARSE_EXTENSION}
- 
+ gtsam
+# ${GTSAM_LIBS}
   ${Boost_SYSTEM_LIBRARY}
+
 )
 
 #############

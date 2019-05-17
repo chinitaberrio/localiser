@@ -1,7 +1,7 @@
 ﻿#include "ros_localiser.hpp"
 
 #include "graph_optimiser.hpp"
-
+#include "gtsam_optimiser.hpp"
 
 #include <rosbag/view.h>
 #include <ros/console.h>
@@ -69,6 +69,17 @@ ROSLocaliser::Initialise() {
   // localisation method
   graph_optimiser = std::make_shared<GraphOptimiser>();
 
+  gtsam_optimiser = std::make_shared<GtsamOptimiser>();
+
+
+  // bind localisation method inputs
+  localiser->perform_update = std::bind(&GtsamOptimiser::AddAbsolutePosition, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  localiser->perform_prediction = std::bind(&GtsamOptimiser::AddRelativeMotion, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+
+  // where to send localisation method outputs
+  gtsam_optimiser->publish_odometry = std::bind(&ROSLocaliser::PublishOdometry, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+
+/*
   // bind localisation method inputs
   localiser->perform_update = std::bind(&GraphOptimiser::AddAbsolutePosition, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
   localiser->perform_prediction = std::bind(&GraphOptimiser::AddRelativeMotion, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
@@ -80,7 +91,7 @@ ROSLocaliser::Initialise() {
 
 rosbag::Bag bag;
 //bag.open("/home/stew/data/2019-02-27_Dataset_year/2019-02-27-09-42-35_Dataset_year.bag");  // BagMode is Read by default
-bag.open("/ssd/2019-04-15-14-37-06_callan_park_loop/sensor_horizontf.bag");  // BagMode is Read by default
+bag.open("/home/stew/data/callan-park/2019-04-15-14-37-06_callan_park_loop.bag");  // BagMode is Read by default
 
 for(rosbag::MessageInstance const m: rosbag::View(bag))
 {
@@ -92,14 +103,14 @@ for(rosbag::MessageInstance const m: rosbag::View(bag))
     imu->receive_message(msg_1);
 
   auto msg_2 = m.instantiate<sensor_msgs::NavSatFix>();
-  if (msg_2 && m.getTopic() == "/ublox_gps/fix")
-    gnss->receive_message(msg_2);
+  //if (msg_2 && m.getTopic() == "/ublox_gps/fix")
+  //  gnss->receive_message(msg_2);
 
   auto msg_3 = m.instantiate<nav_msgs::Odometry>();
   if (msg_3 && m.getTopic() == "/zio/odometry/rear")
     speed->receive_message(msg_3);
-//  else if (msg_3 && m.getTopic() == "/localisation/gnss/utm")
-//    map_icp->receive_message(msg_3);
+  else if (msg_3 && m.getTopic() == "/localisation/gnss/utm")
+    map_icp->receive_message(msg_3);
 
   if (!ros::ok())
     break;

@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 
 #include "graph_optimiser.hpp"
+#include "gtsam_optimiser.hpp"
 
 #include <geometry_msgs/TransformStamped.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -50,6 +51,7 @@ public:
   std::shared_ptr<GNSSObservation> gnss;
 
   std::shared_ptr<GraphOptimiser> graph_optimiser;
+  std::shared_ptr<GtsamOptimiser> gtsam_optimiser;
 
 
 };

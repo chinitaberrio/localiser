@@ -71,7 +71,7 @@ Localiser::Predict(ros::Time stamp) {
 
 void
 Localiser::Update(Eigen::Vector3d &observation, Eigen::Vector3d &covariance, ros::Time stamp) {
-//  ROS_INFO_STREAM("Incorporate an observation");
+//  ROS_INFO_STREAM("Incorporate an observation " << measured_speed);
 
 //  if (measured_speed > 3 && measured_yaw_rate < 0.01 && perform_update) {
   if (measured_speed != 0 && perform_update) {
