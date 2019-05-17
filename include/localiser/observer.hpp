@@ -104,6 +104,7 @@ public:
         return;
       }
 
+      heading = atan2(north-previous_north, east - previous_east);
       previous_east = east;
       previous_north = north;
 

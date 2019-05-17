@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
 
   ROSLocaliser ros_localiser;
   ros_localiser.Initialise();
-  ros::spin();
+//  ros::spin();
 
   return 0;
 }
@@ -80,7 +80,7 @@ ROSLocaliser::Initialise() {
 
 rosbag::Bag bag;
 //bag.open("/home/stew/data/2019-02-27_Dataset_year/2019-02-27-09-42-35_Dataset_year.bag");  // BagMode is Read by default
-bag.open("/home/stew/data/callan-park/2019-04-15-14-37-06_callan_park_loop.bag");  // BagMode is Read by default
+bag.open("/ssd/2019-04-15-14-37-06_callan_park_loop/sensor_horizontf.bag");  // BagMode is Read by default
 
 for(rosbag::MessageInstance const m: rosbag::View(bag))
 {
@@ -92,14 +92,14 @@ for(rosbag::MessageInstance const m: rosbag::View(bag))
     imu->receive_message(msg_1);
 
   auto msg_2 = m.instantiate<sensor_msgs::NavSatFix>();
-  //if (msg_2 && m.getTopic() == "/ublox_gps/fix")
-  //  gnss->receive_message(msg_2);
+  if (msg_2 && m.getTopic() == "/ublox_gps/fix")
+    gnss->receive_message(msg_2);
 
   auto msg_3 = m.instantiate<nav_msgs::Odometry>();
   if (msg_3 && m.getTopic() == "/zio/odometry/rear")
     speed->receive_message(msg_3);
-  else if (msg_3 && m.getTopic() == "/localisation/gnss/utm")
-    map_icp->receive_message(msg_3);
+//  else if (msg_3 && m.getTopic() == "/localisation/gnss/utm")
+//    map_icp->receive_message(msg_3);
 
   if (!ros::ok())
     break;

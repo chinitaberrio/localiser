@@ -68,15 +68,18 @@ class GraphOptimiser : public LocalisationMethod {
 public:
   GraphOptimiser();
 
-  ~GraphOptimiser() { global_optimizer.save("/home/stew/finished.g2o");}
+  ~GraphOptimiser() { global_optimizer.save("finished.g2o");}
 
 
   Eigen::Matrix3d gps_information;
+  Eigen::Matrix3d odom_information;
+
   //Eigen::Matrix2d gps_information;
   mrpt::obs::CActionRobotMovement2D::TMotionModelOptions motion_model_options_;
 
   double previous_yaw_rate;
   double previous_speed;
+  ros::Time previous_stamp;
 
   int observe_countdown;
   int predict_countdown;
@@ -101,7 +104,7 @@ public:
 
   g2o::SparseOptimizer global_optimizer;
 
-  Eigen::Vector3d VehicleModel(Eigen::Vector3d &current_pose, Eigen::Vector2d &motion_delta);
+  Eigen::Vector3d VehicleModel(Eigen::Vector3d &previous_pose, Eigen::Vector2d &motion_delta);
 
   //! Perform the optimisation
   void AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& covariance, ros::Time stamp);

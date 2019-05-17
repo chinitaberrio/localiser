@@ -145,8 +145,8 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME}
 # ${PCL_LIBRARIES}
     ${CSPARSE_LIBRARY} # csparse is used for graph optimization
 #    ${g2o_LIB_collection}
- ${G2O_CORE_LIBRARY}                                                   
- ${G2O_SOLVER_SLAM2D_LINEAR}                                                   
+ ${G2O_CORE_LIBRARY}
+ ${G2O_SOLVER_SLAM2D_LINEAR}
  ${G2O_STUFF_LIBRARY}
  ${G2O_TYPES_SLAM2D}
  ${G2O_SOLVER_CHOLMOD}
