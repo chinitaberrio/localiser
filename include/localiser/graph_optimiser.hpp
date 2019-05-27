@@ -72,7 +72,7 @@ public:
 
 
   Eigen::Matrix3d gps_information;
-  Eigen::Matrix3d odom_information;
+//  Eigen::Matrix3d odom_information;
 
   //Eigen::Matrix2d gps_information;
   mrpt::obs::CActionRobotMovement2D::TMotionModelOptions motion_model_options_;

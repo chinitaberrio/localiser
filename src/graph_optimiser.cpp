@@ -73,23 +73,23 @@ GraphOptimiser::GraphOptimiser() :
   motion_model_options_.gaussianModel.minStdXY = 0.05;
   motion_model_options_.gaussianModel.minStdPHI = 0.005;
 
-  // compute a fixed gps edge information matrix
-  mrpt::math::CMatrixDouble33 odom_cov;
-  //Eigen::Vector3d gps_cov;
-  odom_cov(0,0) = 0.0025;
-  odom_cov(1,1) = 0.0025;
-  odom_cov(2,2) = 0.000001;
-  mrpt::poses::CPose2D place_holder(0,0,0);
-  mrpt::poses::CPosePDFGaussian odom(place_holder, odom_cov);
-  mrpt::math::CMatrixFixedNumeric< double, 3,3 > inf_odom;
-  //Eigen::Matrix3d< double, 3,3 > inf;
-  odom.getInformationMatrix(inf_odom);
+//  // compute a fixed gps edge information matrix
+//  mrpt::math::CMatrixDouble33 odom_cov;
+//  //Eigen::Vector3d gps_cov;
+//  odom_cov(0,0) = 0.0025;
+//  odom_cov(1,1) = 0.0025;
+//  odom_cov(2,2) = 0.0001;
+//  mrpt::poses::CPose2D place_holder(0,0,0);
+//  mrpt::poses::CPosePDFGaussian odom(place_holder, odom_cov);
+//  mrpt::math::CMatrixFixedNumeric< double, 3,3 > inf_odom;
+//  //Eigen::Matrix3d< double, 3,3 > inf;
+//  odom.getInformationMatrix(inf_odom);
 
-  odom_information = Eigen::Matrix3d::Zero();
+//  odom_information = Eigen::Matrix3d::Zero();
 
-  for(int i = 0;i<3;i++)
-    for(int j = 0;j<3;j++)
-      odom_information(i,j)=inf_odom(i,j);
+//  for(int i = 0;i<3;i++)
+//    for(int j = 0;j<3;j++)
+//      odom_information(i,j)=inf_odom(i,j);
 
 
   // compute a fixed gps edge information matrix
@@ -97,8 +97,8 @@ GraphOptimiser::GraphOptimiser() :
   //Eigen::Vector3d gps_cov;
   gps_cov(0,0) = 25;
   gps_cov(1,1) =  25;
-  gps_cov(2,2) =  1;
-//  mrpt::poses::CPose2D place_holder(0,0,0);
+  gps_cov(2,2) =  9;
+  mrpt::poses::CPose2D place_holder(0,0,0);
   mrpt::poses::CPosePDFGaussian gps(place_holder, gps_cov);
   mrpt::math::CMatrixFixedNumeric< double, 3,3 > inf;
   //Eigen::Matrix3d< double, 3,3 > inf;
@@ -248,12 +248,13 @@ GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
     odom_pose_edge->vertices()[0] = global_optimizer.vertex(prior_odometry.back().first);//(previous_odom_vertex_id);
     odom_pose_edge->vertices()[1] = global_optimizer.vertex(odom_pose_vertex->id());
     odom_pose_edge->setMeasurement(pose_odom);
-    odom_pose_edge->setInformation(odom_information);
+    odom_pose_edge->setInformation(information);
+//    odom_pose_edge->setInformation(odom_information);
     global_optimizer.addEdge(odom_pose_edge);
   }
 
   // Add an additional edge every nth node
-  if(0){//prior_odometry.size() > 10) {
+//  if(0){//prior_odometry.size() > 10) {
 
 //    auto old_pose = prior_odometry.at(prior_odometry.size() - 10 - 1);
 
@@ -293,7 +294,7 @@ GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
 //    odom_pose_edge->setMeasurement(pose_odom);
 //    odom_pose_edge->setInformation(information);
 //    global_optimizer.addEdge(odom_pose_edge);
-  }
+//  }
 
 //  Eigen::Vector3d pose_covariance(0,0,0);
 //  if (publish_odometry) {
@@ -340,7 +341,7 @@ GraphOptimiser::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Vector3
 ////  gps_mrpt.normalizePhi();
 //  Eigen::Vector3d gps_measurement(gps_mrpt.x(),gps_mrpt.y(),gps_mrpt.phi());
 
-    ROS_INFO_STREAM(gps_measurement(2));
+//    ROS_INFO_STREAM(gps_measurement(2));
   //g2o::EdgeSE2PointXY* gps_edge = new g2o::EdgeSE2PointXY;
   g2o::EdgeSE2* gps_edge = new g2o::EdgeSE2;
   gps_edge->vertices()[0] = global_optimizer.vertex(0);
