@@ -78,7 +78,7 @@ GraphOptimiser::GraphOptimiser() :
   //Eigen::Vector3d gps_cov;
   odom_cov(0,0) = 0.0025;
   odom_cov(1,1) = 0.0025;
-  odom_cov(2,2) = 0.0001;
+  odom_cov(2,2) = 0.000001;
   mrpt::poses::CPose2D place_holder(0,0,0);
   mrpt::poses::CPosePDFGaussian odom(place_holder, odom_cov);
   mrpt::math::CMatrixFixedNumeric< double, 3,3 > inf_odom;
@@ -148,7 +148,7 @@ GraphOptimiser::VehicleModel(mrpt::poses::CPose2D &previous_pose, Eigen::Vector2
 //  if(current_index < 3)
 //  ROS_INFO_STREAM("odom_state_after: " << odom_state_after(0) <<" " << odom_state_after(1) <<" "<< odom_state_after(2));
 
-  odom_state_after.normalizePhi();
+//  odom_state_after.normalizePhi();
   return odom_state_after;
 
 }
@@ -182,11 +182,11 @@ GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
 
 
 //  Only include every nth prediction step in the graph
-  predict_countdown--;
-  if (predict_countdown > 0) {
-    return;
-  }
-  predict_countdown = 10;
+//  predict_countdown--;
+//  if (predict_countdown > 0) {
+//    return;
+//  }
+//  predict_countdown = 10;
 
   Eigen::Vector3d odom_state_eigen(odom_state.x(),odom_state.y(),odom_state.phi());
 
@@ -309,9 +309,9 @@ GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
     prior_odometry.pop_front();
 
   current_index += 1;
-  if(current_index == 6552){
-    global_optimizer.mergeVertices(global_optimizer.vertex(6551), global_optimizer.vertex(1), false);
-  }
+//  if(current_index == 6552){
+//    global_optimizer.mergeVertices(global_optimizer.vertex(6551), global_optimizer.vertex(1), false);
+//  }
 
 }
 
