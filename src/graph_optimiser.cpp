@@ -21,14 +21,15 @@ GraphOptimiser::GraphOptimiser() :
   LocalisationMethod(),
   predict_countdown(1),
   previous_yaw_rate(0.),
-  observe_countdown(0),
+  previous_speed(0.),
+  observe_countdown(1),
   origin(NULL),
   current_index(0),
   //previous_odom_vertex_id(0),
   datum_x(0.),
   datum_y(0.) {
 
-  odom_state <<0.,0.,0.;
+//  odom_state <<0.,0.,0.;
 
 
 //  ROS_INFO_STREAM("odom_state: " << odom_state(0) <<" " << odom_state(1) <<" "<< odom_state(2));
@@ -77,7 +78,7 @@ GraphOptimiser::GraphOptimiser() :
   //Eigen::Vector3d gps_cov;
   odom_cov(0,0) = 0.0025;
   odom_cov(1,1) = 0.0025;
-  odom_cov(2,2) =25;
+  odom_cov(2,2) = 0.0001;
   mrpt::poses::CPose2D place_holder(0,0,0);
   mrpt::poses::CPosePDFGaussian odom(place_holder, odom_cov);
   mrpt::math::CMatrixFixedNumeric< double, 3,3 > inf_odom;
@@ -113,8 +114,8 @@ GraphOptimiser::GraphOptimiser() :
 
 
 
-Eigen::Vector3d
-GraphOptimiser::VehicleModel(Eigen::Vector3d &previous_pose, Eigen::Vector2d &motion_delta) {
+mrpt::poses::CPose2D
+GraphOptimiser::VehicleModel(mrpt::poses::CPose2D &previous_pose, Eigen::Vector2d &motion_delta) {
   /*! Vehicle transition model.
 
     \brief Transition function for the vehicle model
@@ -129,22 +130,26 @@ GraphOptimiser::VehicleModel(Eigen::Vector3d &previous_pose, Eigen::Vector2d &mo
     */
 
   //! av_heading is the average heading for the time period
-  double av_heading = previous_pose(2) + ((previous_yaw_rate + motion_delta(1)) / 2.);
-
+  double av_heading = previous_pose.phi() + ((previous_yaw_rate + motion_delta(1)) / 2.);
+//if(current_index < 3)
 //  ROS_INFO_STREAM("av_heading: " <<av_heading);
 
   previous_yaw_rate = motion_delta(1);
 
   double av_speed = (motion_delta(0) + previous_speed) / 2.;
   previous_speed = motion_delta(0);
+//if(current_index < 3)
+//  ROS_INFO_STREAM("av_speed: " << av_speed);
 
-//  ROS_INFO_STREAM("motion: " << motion(0) <<" "<< motion(1));
-
-  Eigen::Vector3d odom_state(previous_pose(0) + av_speed * cos(av_heading),
-      previous_pose(1) + av_speed * sin(av_heading),
+  mrpt::poses::CPose2D odom_state_after(previous_pose.x() + av_speed * cos(av_heading),
+      previous_pose.y() + av_speed * sin(av_heading),
       av_heading);
 //  previous_pose[2] + motion_delta[1]);
-   return odom_state;
+//  if(current_index < 3)
+//  ROS_INFO_STREAM("odom_state_after: " << odom_state_after(0) <<" " << odom_state_after(1) <<" "<< odom_state_after(2));
+
+  odom_state_after.normalizePhi();
+  return odom_state_after;
 
 }
 
@@ -160,7 +165,7 @@ GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
 
   // don't add graph elements while stationary (According to the odometry)
   if (motion(0) == 0){
-    ROS_INFO_STREAM("stationary");
+//    ROS_INFO_STREAM("stationary");
     return;}
 
   //! Use a fixed delta_t (100Hz) until the timing issues with the vectornav is fixed
@@ -168,11 +173,11 @@ GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
 //  double delta_t = (stamp - previous_stamp).toSec();
 //  previous_stamp = stamp;
   motion *= delta_t;
-//  if(current_index < 10)
+//  if(current_index < 3)
 //  ROS_INFO_STREAM("last_odom_state: " << odom_state(0) <<" " << odom_state(1) <<" "<< odom_state(2));
   odom_state = this->VehicleModel(odom_state, motion);
-//  if(current_index < 10)
-//  ROS_INFO_STREAM("odom_state: " << odom_state(0) <<" " << odom_state(1) <<" "<< odom_state(2));
+//  if(current_index < 100)
+//  ROS_INFO_STREAM("odom_state: " << odom_state.phi());
 
 
 
@@ -181,13 +186,13 @@ GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
   if (predict_countdown > 0) {
     return;
   }
-  predict_countdown = 50;
+  predict_countdown = 10;
 
-
+  Eigen::Vector3d odom_state_eigen(odom_state.x(),odom_state.y(),odom_state.phi());
 
   g2o::VertexSE2* odom_pose_vertex = new g2o::VertexSE2;
   odom_pose_vertex->setId(current_index);
-  odom_pose_vertex->setEstimate(odom_state);
+  odom_pose_vertex->setEstimate(odom_state_eigen);
   global_optimizer.addVertex(odom_pose_vertex);
 
 //  if(current_index == 1){
@@ -199,18 +204,22 @@ GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
   // Incorporate previous odometry measurement as an edge (if it exists)
   if(prior_odometry.size() > 0) {
 
-    Eigen::Vector3d last_pose = prior_odometry.back().second;
-    Eigen::Vector3d pose_difference = odom_state - last_pose;
+    mrpt::poses::CPose2D last_pose = prior_odometry.back().second;
+    mrpt::poses::CPose2D odom_incr = odom_state - last_pose;
+//    ROS_INFO_STREAM("odom_incr: " << odom_incr.phi());
+//    odom_incr.normalizePhi();
+//    ROS_INFO_STREAM("odom_incr: " << odom_incr.phi());
+
     /*
       if (prior_odometry.size() > 0) {
         pose_difference -= prior_odometry.back().second; //previous_odom_state;
       }
     */
 //    ROS_INFO_STREAM("last_pose: " << std::fixed << last_pose(0) <<" " << std::fixed << last_pose(1) <<" "<< last_pose(2));
-    ROS_INFO_STREAM("motion: " << motion(0) <<" "<< motion(1));
-    ROS_INFO_STREAM("pose_difference: " << std::fixed << pose_difference(0) <<" " << std::fixed << pose_difference(1) <<" "<< pose_difference(2));
+//    ROS_INFO_STREAM("motion: " << motion(0) <<" "<< motion(1));
+//    ROS_INFO_STREAM("pose_difference: " << std::fixed << pose_difference(0) <<" " << std::fixed << pose_difference(1) <<" "<< pose_difference(2));
 
-    mrpt::poses::CPose2D odom_incr(pose_difference(0), pose_difference(1), pose_difference(2));
+//    mrpt::poses::CPose2D odom_incr(pose_difference(0), pose_difference(1), pose_difference(2));
 
     mrpt::obs::CActionRobotMovement2D odom_move;
     mrpt::system::TTimeStamp mrpt_timestamp;
@@ -224,7 +233,7 @@ GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
     mrpt::poses::CPosePDFGaussian aux(mean_point, aux_cov);
 
     Eigen::Vector3d pose_odom(aux.mean.x(), aux.mean.y(), aux.mean.phi());
-    ROS_INFO_STREAM("pose_odom: " << std::fixed << pose_odom(0) <<" " << std::fixed << pose_odom(1) <<" "<< pose_odom(2));
+//    ROS_INFO_STREAM("pose_odom: " << std::fixed << pose_odom(0) <<" " << std::fixed << pose_odom(1) <<" "<< pose_odom(2));
 
 
     mrpt::math::CMatrixFixedNumeric< double, 3,3 > inf;
@@ -286,10 +295,10 @@ GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
 //    global_optimizer.addEdge(odom_pose_edge);
   }
 
-  Eigen::Vector3d pose_covariance(0,0,0);
-  if (publish_odometry) {
-    publish_odometry(odom_state, pose_covariance, stamp);
-  }
+//  Eigen::Vector3d pose_covariance(0,0,0);
+//  if (publish_odometry) {
+//    publish_odometry(odom_state, pose_covariance, stamp);
+//  }
 
   //  previous_prediction_stamp = stamp;
   //  previous_odom_vertex_id = current_index;
@@ -300,18 +309,23 @@ GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
     prior_odometry.pop_front();
 
   current_index += 1;
+  if(current_index == 6552){
+    global_optimizer.mergeVertices(global_optimizer.vertex(6551), global_optimizer.vertex(1), false);
+  }
+
 }
 
 void
 GraphOptimiser::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Vector3d& covariance, ros::Time stamp) {
-  ROS_INFO_STREAM("ADDING ABSOLUTE POSITION");
+//  ROS_INFO_STREAM("observe_countdown"<<observe_countdown);
+
+//  observe_countdown--;
 
 //  if (observe_countdown > 0) {
-//    observe_countdown--;
 //    return;
 //  }
 
-//  observe_countdown = 1000;
+//  observe_countdown = 100;
 
   //! TODO: don't assume it fits with the latest odom
 
@@ -321,9 +335,12 @@ GraphOptimiser::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Vector3
   }
 
   Eigen::Vector3d gps_measurement(observation[0] - datum_x, observation[1] - datum_y, observation[2]);
-  //    Eigen::Vector2d gps_measurement(observation[0] - datum_x, observation[1] - datum_y);
 
-  //  ROS_INFO_STREAM(current_index);
+//  mrpt::poses::CPose2D gps_mrpt(observation[0] - datum_x, observation[1] - datum_y, observation[2]);
+////  gps_mrpt.normalizePhi();
+//  Eigen::Vector3d gps_measurement(gps_mrpt.x(),gps_mrpt.y(),gps_mrpt.phi());
+
+    ROS_INFO_STREAM(gps_measurement(2));
   //g2o::EdgeSE2PointXY* gps_edge = new g2o::EdgeSE2PointXY;
   g2o::EdgeSE2* gps_edge = new g2o::EdgeSE2;
   gps_edge->vertices()[0] = global_optimizer.vertex(0);

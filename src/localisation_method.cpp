@@ -15,7 +15,7 @@
 
 LocalisationMethod::LocalisationMethod() :
     map_state(Eigen::Vector3d(0.,0.,0.)),
-    odom_state(Eigen::Vector3d(0.,0.,0.)),
+    odom_state(mrpt::poses::CPose2D(0.,0.,0.)),
     previous_prediction_stamp(ros::Time(0.)),
     previous_observation_stamp(ros::Time(0.))
 {}

@@ -96,7 +96,7 @@ public:
   double datum_x;
   double datum_y;
 
-   std::deque<std::pair<uint32_t, Eigen::Vector3d>> prior_odometry;
+   std::deque<std::pair<uint32_t, mrpt::poses::CPose2D>> prior_odometry;
 
   uint32_t previous_odom_vertex_id;
 
@@ -104,7 +104,7 @@ public:
 
   g2o::SparseOptimizer global_optimizer;
 
-  Eigen::Vector3d VehicleModel(Eigen::Vector3d &previous_pose, Eigen::Vector2d &motion_delta);
+  mrpt::poses::CPose2D VehicleModel(mrpt::poses::CPose2D &previous_pose, Eigen::Vector2d &motion_delta);
 
   //! Perform the optimisation
   void AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& covariance, ros::Time stamp);
