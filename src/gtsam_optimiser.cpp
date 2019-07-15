@@ -24,7 +24,7 @@ GtsamOptimiser::GtsamOptimiser() :
   datum_x(0.),
   datum_y(0.) {
 
-  odom_state = Eigen::Vector3d(0,0,+1.1);
+  odom_state_eigen = Eigen::Vector3d(0,0,+1.1);
   //rosbag::Bag bag;
   bag.open("/home/stew/test.bag", rosbag::bagmode::Write);
   if (bag.isOpen())
@@ -132,7 +132,7 @@ GtsamOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
   //! Use a fixed delta_t (100Hz) until the timing issues with the vectornav is fixed
   double delta_t = 0.01;
   motion *= delta_t;
-  odom_state = this->VehicleModel(odom_state, motion);
+  odom_state_eigen = this->VehicleModel(odom_state_eigen, motion);
 
 
   // don't add graph elements while stationary (According to the odometry)
@@ -153,12 +153,12 @@ GtsamOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
   global_optimizer.addVertex(odom_pose_vertex);
 */
 
-  initialEstimate.insert(current_index, Pose2(odom_state[0], odom_state[1], odom_state[2]));
+  initialEstimate.insert(current_index, Pose2(odom_state_eigen[0], odom_state_eigen[1], odom_state_eigen[2]));
 
   nav_msgs::Odometry odom_msg;
-  odom_msg.pose.pose.position.x = odom_state[0];
-  odom_msg.pose.pose.position.y = odom_state[1];
-  odom_msg.twist.twist.angular.z = odom_state[2];
+  odom_msg.pose.pose.position.x = odom_state_eigen[0];
+  odom_msg.pose.pose.position.y = odom_state_eigen[1];
+  odom_msg.twist.twist.angular.z = odom_state_eigen[2];
   bag.write("odom", ros::Time::now(), odom_msg);
 
 //    ROS_INFO_STREAM("Initial " << current_index << " " << odom_state[0] << " " << odom_state[1] << " " << odom_state[2]);
@@ -166,7 +166,7 @@ GtsamOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
   // Incorporate previous odometry measurement as an edge (if it exists)
   if(prior_odometry.size() > 0) {
 
-    Eigen::Vector3d pose_difference = odom_state - prior_odometry.back().second;
+    Eigen::Vector3d pose_difference = odom_state_eigen - prior_odometry.back().second;
 
     //motion_model_options_.gaussianModel.minStdXY = 0.05;
     //motion_model_options_.gaussianModel.minStdPHI = 0.005;
@@ -211,13 +211,13 @@ GtsamOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
 
   Eigen::Vector3d pose_covariance(0,0,0);
   if (publish_odometry) {
-    publish_odometry(odom_state, pose_covariance, stamp);
+    publish_odometry(odom_state_eigen, pose_covariance, stamp);
   }
 
   //  previous_prediction_stamp = stamp;
   //  previous_odom_vertex_id = current_index;
 
-  prior_odometry.push_back(std::make_pair(current_index, odom_state));
+  prior_odometry.push_back(std::make_pair(current_index, odom_state_eigen));
 
   while (prior_odometry.size() > 250)
     prior_odometry.pop_front();

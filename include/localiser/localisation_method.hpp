@@ -39,6 +39,8 @@ public:
 
   // Current estimate of the robot state (map frame, odom frame)
   Eigen::Vector3d map_state;
+
+  Eigen::Vector3d odom_state_eigen;
   mrpt::poses::CPose2D odom_state;
 
   ros::Time previous_prediction_stamp;

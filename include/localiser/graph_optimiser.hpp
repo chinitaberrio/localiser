@@ -96,11 +96,17 @@ public:
   double datum_x;
   double datum_y;
 
-   std::deque<std::pair<uint32_t, mrpt::poses::CPose2D>> prior_odometry;
+  std::deque<g2o::HyperGraph::EdgeSet> edge_deque;
+
+  std::deque<std::pair<uint32_t, mrpt::poses::CPose2D>> prior_odometry;
 
   uint32_t previous_odom_vertex_id;
 
   void RunOptimiser();
+
+  ros::Time last_odometry;
+
+  std::list<std::pair<uint32_t, ros::Time>> odometry_times;
 
   g2o::SparseOptimizer global_optimizer;
 

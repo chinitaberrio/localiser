@@ -40,9 +40,14 @@ public:
 
   }
 
+  void PublishMap(Eigen::Vector3d &map_estimate, Eigen::Vector3d &covariance, ros::Time stamp);
+
   std::shared_ptr<Localiser> localiser;
 
   std::vector<ros::Subscriber> subscribers;
+  ros::Publisher map_publisher;
+  ros::Publisher fix_publisher;
+  ros::Publisher observe_publisher;
 
   std::shared_ptr<ImuMeasurement> imu;
   std::shared_ptr<SpeedMeasurement> speed;

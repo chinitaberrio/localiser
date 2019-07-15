@@ -43,8 +43,41 @@ int main(int argc, char** argv) {
 
 
 void
+ROSLocaliser::PublishMap(Eigen::Vector3d &map_estimate, Eigen::Vector3d &covariance, ros::Time stamp) {
+//    ROS_INFO_STREAM("PUBLISH MAP " << map_estimate);
+
+
+    nav_msgs::Odometry msg;
+    msg.header.stamp = stamp;
+    msg.header.frame_id = "map";
+    msg.pose.pose.position.x = map_estimate[0];
+    msg.pose.pose.position.y = map_estimate[1];
+
+    //msg.pose.orientation;
+    map_publisher.publish(msg);
+
+
+
+    double lat, lon;
+    gps_common::UTMtoLL(map_estimate[1], map_estimate[0], "56H", lat, lon);
+
+    sensor_msgs::NavSatFix fix_msg;
+    fix_msg.header.frame_id = "map";
+    fix_msg.header.stamp = stamp;
+    fix_msg.latitude = lat;
+    fix_msg.longitude = lon;
+
+    fix_publisher.publish(fix_msg);
+}
+
+
+void
 ROSLocaliser::Initialise() {
   ros::NodeHandle n;
+
+  map_publisher = n.advertise<nav_msgs::Odometry>("map/odometry", 100);
+  fix_publisher = n.advertise<sensor_msgs::NavSatFix>("map/fix", 100);
+  observe_publisher = n.advertise<sensor_msgs::NavSatFix>("map/raw_fix", 100);
 
   localiser = std::make_shared<Localiser>();
 
@@ -72,27 +105,28 @@ ROSLocaliser::Initialise() {
   gtsam_optimiser = std::make_shared<GtsamOptimiser>();
 
 
+  /*
   // bind localisation method inputs
   localiser->perform_update = std::bind(&GtsamOptimiser::AddAbsolutePosition, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
   localiser->perform_prediction = std::bind(&GtsamOptimiser::AddRelativeMotion, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
   // where to send localisation method outputs
   gtsam_optimiser->publish_odometry = std::bind(&ROSLocaliser::PublishOdometry, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-
-/*
+*/
   // bind localisation method inputs
   localiser->perform_update = std::bind(&GraphOptimiser::AddAbsolutePosition, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
   localiser->perform_prediction = std::bind(&GraphOptimiser::AddRelativeMotion, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
   // where to send localisation method outputs
   graph_optimiser->publish_odometry = std::bind(&ROSLocaliser::PublishOdometry, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  graph_optimiser->publish_map = std::bind(&ROSLocaliser::PublishMap, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
 
 
 rosbag::Bag bag;
-//bag.open("/home/stew/data/2019-02-27_Dataset_year/2019-02-27-09-42-35_Dataset_year.bag");  // BagMode is Read by default
+//bag.open("/home/stew/data/2019-02-22_Dataset_year/2019-02-22-16-16-58_Dataset_year.bag");  // BagMode is Read by default
 bag.open("/home/stew/data/callan-park/2019-04-15-14-37-06_callan_park_loop.bag");  // BagMode is Read by default
-
+//bag.open("/home/stew/data/2019-03-07_Mainquad_video/2019-03-07-15-34-14_Mainquad_video.bag");  // BagMode is Read by default
 for(rosbag::MessageInstance const m: rosbag::View(bag))
 {
   //sensor_msgs::NavSatFix
@@ -103,14 +137,18 @@ for(rosbag::MessageInstance const m: rosbag::View(bag))
     imu->receive_message(msg_1);
 
   auto msg_2 = m.instantiate<sensor_msgs::NavSatFix>();
-  //if (msg_2 && m.getTopic() == "/ublox_gps/fix")
-  //  gnss->receive_message(msg_2);
+  if (msg_2 && m.getTopic() == "/ublox_gps/fix") {
+    gnss->receive_message(msg_2);
+    observe_publisher.publish(msg_2);
+  }
 
   auto msg_3 = m.instantiate<nav_msgs::Odometry>();
   if (msg_3 && m.getTopic() == "/zio/odometry/rear")
     speed->receive_message(msg_3);
-  else if (msg_3 && m.getTopic() == "/localisation/gnss/utm")
-    map_icp->receive_message(msg_3);
+  else if (msg_3 && m.getTopic() == "/vn100/odometry")
+    speed->receive_message(msg_3);
+  //else if (msg_3 && m.getTopic() == "/localisation/gnss/utm")
+  //  map_icp->receive_message(msg_3);
 
   if (!ros::ok())
     break;
