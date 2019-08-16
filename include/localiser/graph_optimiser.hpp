@@ -18,6 +18,7 @@
 
 #include <geometry_msgs/TransformStamped.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <nav_msgs/Odometry.h>
 #include <tf2/LinearMath/Transform.h>
 #include <tf2_ros/buffer.h>
 
@@ -57,6 +58,9 @@
 //#include <mrpt/math/lightweight_geom_data.h>
 //#include <mrpt/opengl/stock_objects.h>
 
+using namespace mrpt::poses;
+using namespace g2o;
+
 /*!
  * \brief Optimise a graph of poses
  * Optimises a graph structure containing poses linked by relative motion, with additional edges for global
@@ -67,9 +71,12 @@ class GraphOptimiser : public LocalisationMethod {
 public:
   GraphOptimiser();
 
-  ~GraphOptimiser() { global_optimizer.save("finished.g2o");}
+  ~GraphOptimiser() {
+    global_optimizer.save("finished.g2o");
+    outBag.close();
+  }
 
-
+  rosbag::Bag outBag;
   Eigen::Matrix3d gps_information;
 //  Eigen::Matrix3d odom_information;
 
@@ -89,6 +96,7 @@ public:
   g2o::OptimizationAlgorithmGaussNewton* algoGN;
 
   uint32_t current_index;
+  CPosePDFGaussian current_pose;
 
   // The number of previous observations that are included in the optimisation process
   //  bigger number means more smoothed path
