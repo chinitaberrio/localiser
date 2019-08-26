@@ -22,12 +22,47 @@
 class PipelineInput {
 public:
 
+  PipelineInput() (false) {}
+  ~PipelineInput() {}
+
+  template <class MessageType>
+  void Initialise(std::string topic, MessageType message) {
+    ros::NodeHandle nh;
+    publisher_ = nh.advertise<MessageType>(topic, 1);
+  }
+
+private:
+
+  std::string topic_;
+  ros::Publisher publisher_;
+
 };
 
 
+template <class MessageType>
 class PipelineOutput {
 public:
 
+  PipelineOutput() : message_received{}
+  ~PipelineOutput() {}
+
+  void Initialise(std::string topic, MessageType message) {
+    ros::NodeHandle nh;
+    subscriber_ = nh.subscribe<MessageType>(topic, 1, &PipelineOutput::SubscriberCallback, this);
+  }
+
+private:
+
+  void SubscriberCallback(MessageType message) {
+    last_message = message;
+    message_received = true;
+  }
+
+  MessageType last_message;
+  bool message_received;
+
+  std::string topic_;
+  ros::Subscriber subscriber_;
 };
 
 /*!
