@@ -25,13 +25,13 @@ GtsamOptimiser::GtsamOptimiser() :
   datum_y(0.) {
 
   odom_state_eigen = Eigen::Vector3d(0,0,+1.1);
-  //rosbag::Bag bag;
+/*  //rosbag::Bag bag;
   bag.open("/home/stew/test.bag", rosbag::bagmode::Write);
   if (bag.isOpen())
     ROS_INFO_STREAM("ROS bag is open");
   else
     ROS_INFO_STREAM("ROS bag is NOT open");
-
+*/
 
 //  RunOptimiser();
 }
@@ -50,7 +50,7 @@ GtsamOptimiser::RunOptimiser() {
     map_msg.pose.pose.position.x = value_pose.x();
     map_msg.pose.pose.position.y = value_pose.y();
     map_msg.twist.twist.angular.z = value_pose.theta();
-    bag.write("map", ros::Time::now(), map_msg);
+    //bag.write("map", ros::Time::now(), map_msg);
 
   }
 
@@ -159,7 +159,7 @@ GtsamOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
   odom_msg.pose.pose.position.x = odom_state_eigen[0];
   odom_msg.pose.pose.position.y = odom_state_eigen[1];
   odom_msg.twist.twist.angular.z = odom_state_eigen[2];
-  bag.write("odom", ros::Time::now(), odom_msg);
+  //bag.write("odom", ros::Time::now(), odom_msg);
 
 //    ROS_INFO_STREAM("Initial " << current_index << " " << odom_state[0] << " " << odom_state[1] << " " << odom_state[2]);
 
@@ -254,7 +254,7 @@ GtsamOptimiser::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Vector3
   nav_msgs::Odometry map_msg;
   map_msg.pose.pose.position.x = gps_measurement[0];
   map_msg.pose.pose.position.y = gps_measurement[1];
-  bag.write("gnss", ros::Time::now(), map_msg);
+  //bag.write("gnss", ros::Time::now(), map_msg);
 
 
   //    Eigen::Vector2d gps_measurement(observation[0] - datum_x, observation[1] - datum_y);

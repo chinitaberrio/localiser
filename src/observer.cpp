@@ -1,5 +1,5 @@
 ﻿#include "observer.hpp"
-#include <rosbag/view.h>
+
 #include <ros/console.h>
 #include <nav_msgs/Odometry.h>
 

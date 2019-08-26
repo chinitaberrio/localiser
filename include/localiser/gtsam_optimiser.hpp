@@ -4,8 +4,6 @@
 #include "localisation_method.hpp"
 
 
-#include <rosbag/bag.h>
-
 #include <cmath>
 #include <deque>
 #include <string>
@@ -20,7 +18,6 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <tf2/LinearMath/Transform.h>
 #include <tf2_ros/buffer.h>
-#include <rosbag/bag.h>
 
 
 //#include <tf2/LinearMath/Transform.h>
@@ -130,11 +127,12 @@ class GtsamOptimiser : public LocalisationMethod {
 public:
   GtsamOptimiser();
 
-  ~GtsamOptimiser() {RunOptimiser();
-                     bag.close();}
+  ~GtsamOptimiser() {
+    RunOptimiser();
+  }
 
 
-  rosbag::Bag bag;
+  //rosbag::Bag bag;
 
   Eigen::Matrix3d gps_information;
 

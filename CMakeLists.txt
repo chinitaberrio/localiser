@@ -67,6 +67,11 @@ find_package(G2O REQUIRED)
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 
+find_package(PCL REQUIRED)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
 catkin_package(
         CATKIN_DEPENDS
         nav_msgs sensor_msgs std_msgs sensor_msgs mrpt_bridge rosbag
@@ -122,6 +127,10 @@ add_executable(${PROJECT_NAME}
     src/linear_filter.cpp
     src/graph_optimiser.cpp
     src/gtsam_optimiser.cpp
+    src/publisher.cpp
+    src/bag_output.cpp
+    src/bag_input.cpp
+    src/run_pipeline.cpp
     #src/icp_map_maker.cpp
 )
 #add_executable(edit_g2o
@@ -139,7 +148,7 @@ add_executable(${PROJECT_NAME}
 #)
 
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}
-
+  ${PCL_LIBRARIES}
   ${catkin_LIBRARIES}
 #    icp_map
 #    simple_graph

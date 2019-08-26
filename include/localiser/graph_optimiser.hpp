@@ -20,7 +20,6 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <tf2/LinearMath/Transform.h>
 #include <tf2_ros/buffer.h>
-#include <rosbag/bag.h>
 
 
 //#include <tf2/LinearMath/Transform.h>
@@ -91,6 +90,11 @@ public:
 
   uint32_t current_index;
 
+  // The number of previous observations that are included in the optimisation process
+  //  bigger number means more smoothed path
+  //  smaller number means faster computation
+  const uint32_t OPTIMISE_OVER_PREVIOUS_VALUES = 50;
+
 //  const double datum_x = 332722.272927207;
 //  const double datum_y = 6248431.02677212;
   double datum_x;
@@ -106,6 +110,7 @@ public:
 
   ros::Time last_odometry;
 
+  // Store the odometry measurement times to link to delayed observations
   std::list<std::pair<uint32_t, ros::Time>> odometry_times;
 
   g2o::SparseOptimizer global_optimizer;
@@ -114,9 +119,7 @@ public:
 
   //! Perform the optimisation
   void AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& covariance, ros::Time stamp);
-
   void AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Vector3d& covariance, ros::Time stamp);
-
 };
 
 

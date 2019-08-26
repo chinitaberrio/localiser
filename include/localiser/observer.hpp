@@ -13,7 +13,6 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <tf2/LinearMath/Transform.h>
 #include <tf2_ros/buffer.h>
-#include <rosbag/bag.h>
 
 
 //#include <tf2/LinearMath/Transform.h>
