@@ -131,6 +131,8 @@ add_executable(${PROJECT_NAME}
     src/bag_output.cpp
     src/bag_input.cpp
     src/run_pipeline.cpp
+    src/point_cloud_features_pipeline.cpp
+    src/icp_matcher_pipeline.cpp
     #src/icp_map_maker.cpp
 )
 #add_executable(edit_g2o

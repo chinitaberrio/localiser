@@ -11,24 +11,24 @@
 #include <sensor_msgs/PointCloud2.h>
 
 
-//
-//#include <Eigen/Core>
-//#include <Eigen/StdVector>
-//
-//#include <vector>
 
-
-
+template <class MessageType>
 class PipelineInput {
 public:
 
-  PipelineInput() (false) {}
+  PipelineInput() {}
   ~PipelineInput() {}
 
-  template <class MessageType>
-  void Initialise(std::string topic, MessageType message) {
+  typedef boost::shared_ptr<MessageType> MessageTypePtr;
+
+
+  void Initialise(std::string topic) {
     ros::NodeHandle nh;
     publisher_ = nh.advertise<MessageType>(topic, 1);
+  }
+
+  void PublishMessage(MessageTypePtr message) {
+    publisher_.publish(message);
   }
 
 private:
@@ -38,28 +38,44 @@ private:
 
 };
 
-
-template <class MessageType>
-class PipelineOutput {
+class PipelineConnectorOutput {
 public:
 
-  PipelineOutput() : message_received{}
+  PipelineConnectorOutput(): message_received_(false) {
+
+  }
+
+  bool message_received_;
+
+};
+
+
+template <class MessageType>
+class PipelineOutput : public PipelineConnectorOutput {
+public:
+
+  typedef boost::shared_ptr<MessageType> MessageTypePtr;
+
+  PipelineOutput() {
+    MessageTypePtr last_message_(new MessageType);
+  }
   ~PipelineOutput() {}
 
-  void Initialise(std::string topic, MessageType message) {
+  void Initialise(std::string topic, std::vector<PipelineConnectorOutput*> &pipe_container) {
     ros::NodeHandle nh;
-    subscriber_ = nh.subscribe<MessageType>(topic, 1, &PipelineOutput::SubscriberCallback, this);
+    subscriber_ = nh.subscribe<MessageTypePtr>(topic, 1, &PipelineOutput::SubscriberCallback, this);
+    pipe_container.push_back(this);
   }
+
+  MessageTypePtr last_message;
 
 private:
 
-  void SubscriberCallback(MessageType message) {
+  void SubscriberCallback(const MessageTypePtr message) {
     last_message = message;
-    message_received = true;
+    message_received_ = true;
   }
 
-  MessageType last_message;
-  bool message_received;
 
   std::string topic_;
   ros::Subscriber subscriber_;
@@ -75,49 +91,15 @@ public:
   RunPipeline();
   ~RunPipeline();
 
-  /*
-  void publish_odom(nav_msgs::Odometry &msg, std::string topic_name);
-  void publish_fix(sensor_msgs::NavSatFix &msg, std::string topic_name);
-  */
+  bool WaitForMessages();
+  void ResetMessageFlags();
 
-//  std::map<std::string, std::
+protected:
 
-//  void PublishLatestTransform(std::string parent_frame, std::string child_frame);
-
-
-  std::map<std::string, ros::Subscriber> subscribers;
-  std::map<std::string, ros::Publisher> publishers;
-
-
+  std::vector<PipelineConnectorOutput*> pipes_out;
 };
 
 
-#include "point_xyzir.h"
-#include "point_xyzirc.h"
-
-
-class PointCloudFeaturesPipeline : public RunPipeline {
-
-public:
-  PointCloudFeaturesPipeline();
-  ~PointCloudFeaturesPipeline();
-
-  void receive_message(const sensor_msgs::PointCloud2::ConstPtr& input_pointcloud);
-
-  //std::function<void(nav_msgs::Odometry&, std::string)> pipeline_input;
-  void FeatureExtractor(pcl::PointCloud<pcl::PointXYZIR>::ConstPtr& input_pointcloud,
-      pcl::PointCloud<pcl::PointXYZIRC>::Ptr& pole_pointcloud,
-      pcl::PointCloud<pcl::PointXYZIRC>::Ptr& corner_pointcloud);
-
-private:
-  void PolesCB(const pcl::PointCloud<pcl::PointXYZIRC>::ConstPtr& pointcloud);
-  void CornersCB(const pcl::PointCloud<pcl::PointXYZIRC>::ConstPtr& pointcloud);
-
-  bool pole_msg_received;
-  bool corner_msg_received;
-
-  ros::Publisher pub;
-};
 
 
 #endif

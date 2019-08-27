@@ -21,7 +21,7 @@
 #include "localiser.hpp"
 #include "publisher.hpp"
 
-#include "run_pipeline.hpp"
+#include "point_cloud_features_pipeline.hpp"
 
 /*!
  * \brief The class that manages the localisation process
