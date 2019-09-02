@@ -30,10 +30,10 @@ public:
   LocalisationMethod();
 
   //! Callback to publish odometry information
-  std::function<void(Eigen::Vector3d&, Eigen::Vector3d&, ros::Time)> publish_odometry;
+  std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, ros::Time)> publish_odometry;
 
   //! Callback to publish map information
-  std::function<void(Eigen::Vector3d&, Eigen::Vector3d&, ros::Time)> publish_map;
+  std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, Eigen::Vector3d&, ros::Time)> publish_map;
 
   // Current estimate of the robot state (map frame, odom frame)
   Eigen::Vector3d map_state;

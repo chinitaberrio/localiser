@@ -7,7 +7,7 @@
 
 PointCloudFeaturesPipeline::PointCloudFeaturesPipeline() {
 
-  input_pointcloud.Initialise(std::string("/velodyne/front/points"));
+  input_pointcloud.Initialise("/velodyne/front/points");
 
   output_poles.Initialise("/velodyne/front/pole_stacker/average", pipes_out);
   output_corners.Initialise("/velodyne/front/corner_stacker/average", pipes_out);
@@ -30,6 +30,10 @@ PointCloudFeaturesPipeline::receive_message(const sensor_msgs::PointCloud2::Cons
   if (WaitForMessages()) {
     ROS_INFO_STREAM("received response " << output_poles.last_message->points.size() << ", "
                                          << output_corners.last_message->points.size());
+
+    if (publish_poles_corners) {
+      publish_poles_corners(output_poles.last_message, output_corners.last_message);
+    }
   }
   else {
     ROS_INFO_STREAM("No messages received");

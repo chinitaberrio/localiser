@@ -16,11 +16,11 @@ public:
   ICPMatcherPipeline();
   ~ICPMatcherPipeline() {}
 
-  void receive_message(const sensor_msgs::PointCloud2::ConstPtr& input_pointcloud);
-
+  void receive_message(const pcl::PointCloud<pcl::PointXYZIRC>::Ptr& poles_pointcloud,
+                       const pcl::PointCloud<pcl::PointXYZIRC>::Ptr& corners_pointcloud);
 private:
-  PipelineInput<pcl::PointCloud<pcl::PointXYZIR>> input_pointcloud;
-  PipelineOutput<pcl::PointCloud<pcl::PointXYZIRC>> output_poles, output_corners;
+  PipelineInput<pcl::PointCloud<pcl::PointXYZIRC>> input_poles, input_corners;
+  PipelineOutput<nav_msgs::Odometry> output_pose;
 
 };
 

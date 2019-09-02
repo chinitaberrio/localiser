@@ -120,7 +120,8 @@ set(g2o_LIB_collection
 
 add_executable(${PROJECT_NAME}
     src/ros_localiser.cpp
-    src/localiser.cpp
+    src/localiser_input.cpp
+    src/localiser_output.cpp
     src/observer.cpp
     src/predictor.cpp
     src/localisation_method.cpp

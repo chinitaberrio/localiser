@@ -33,7 +33,7 @@ public:
   Observer();
 
   //! Perform the prediction
-  std::function<void(Eigen::Vector3d&, Eigen::Vector3d&, ros::Time)> perform_update;
+  std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, ros::Time)> perform_update;
 
 
 
@@ -59,11 +59,15 @@ public:
       // covariance [4] is y-orientation
 
       // covariance is the diagonal of term 0 (x) term 1 (y) and term 5 (heading)
-      Eigen::Vector3d observation_covariance(msg->pose.covariance[0 + 0 * 6], msg->pose.covariance[1 + 1 * 6], msg->pose.covariance[5 + 5 * 6]);
+      Eigen::Matrix3d observation_covariance;
+      observation_covariance << msg->pose.covariance[0 + 0 * 6], 0., 0.,
+          0., msg->pose.covariance[1 + 1 * 6], 0.,
+          0., 0., msg->pose.covariance[5 + 5 * 6];
 
-      Eigen::Vector3d observation_vector(msg->pose.pose.position.x,
-                                         msg->pose.pose.position.y,
-                                         yaw);
+      Eigen::Vector3d observation_vector;
+      observation_vector << msg->pose.pose.position.x,
+                            msg->pose.pose.position.y,
+                            yaw;
 
       // covariance [0] is x-twist-linear
       perform_update(observation_vector,
@@ -107,13 +111,17 @@ public:
       previous_east = east;
       previous_north = north;
 
-      Eigen::Vector3d covariance;
+      Eigen::Matrix3d covariance;
 
       if (msg->position_covariance[0] < RTK_COVARIANCE_THRESHOLD) {
-        covariance = Eigen::Vector3d(POSITION_COVARIANCE_RTK, POSITION_COVARIANCE_RTK, POSITION_COVARIANCE_RTK);
+        covariance << POSITION_COVARIANCE_RTK, 0., 0.,
+            0., POSITION_COVARIANCE_RTK, 0.,
+            0., 0., POSITION_COVARIANCE_RTK;
       }
       else {
-        covariance = Eigen::Vector3d(POSITION_COVARIANCE_GNSS, POSITION_COVARIANCE_GNSS, HEADING_COVARIANCE);
+        covariance << POSITION_COVARIANCE_GNSS, 0., 0.,
+            0., POSITION_COVARIANCE_GNSS, 0.,
+            0., 0., HEADING_COVARIANCE;
       }
 
       if (perform_update) {

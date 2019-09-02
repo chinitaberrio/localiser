@@ -118,8 +118,8 @@ public:
   mrpt::poses::CPose2D VehicleModel(mrpt::poses::CPose2D &previous_pose, Eigen::Vector2d &motion_delta);
 
   //! Perform the optimisation
-  void AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& covariance, ros::Time stamp);
-  void AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Vector3d& covariance, ros::Time stamp);
+  void AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covariance, ros::Time stamp);
+  void AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp);
 };
 
 

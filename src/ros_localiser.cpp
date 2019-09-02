@@ -6,10 +6,6 @@
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/NavSatFix.h>
 
-#include <tf/transform_datatypes.h>
-#include <tf2_msgs/TFMessage.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
 /*
 #include <ostream>
@@ -24,10 +20,34 @@
 #include <Eigen/Core>
 #include <Eigen/StdVector>
 
-
+#include "linear_filter.hpp"
 
 int main(int argc, char** argv) {
+/*
+  LinearFilter linear_filter;
+  linear_filter.state << 0., 0., 0.;
 
+  linear_filter.state_var << 0.1, 0., 0.,
+                             0., 0.1, 0.,
+                             0., 0., 0.1;
+
+
+  Eigen::Vector3d observation;
+  observation << 1., 0., 0.;
+
+  Eigen::Matrix3d observation_noise;
+  observation_noise << 0.1, 0., 0.,
+                       0., 0.1, 0.,
+                       0., 0., 0.001;
+
+
+  linear_filter.update(observation, observation_noise);
+
+//  linear_filter.test_predict();
+//  linear_filter.test_update();
+
+  return 0;
+*/
   ros::init(argc, argv, "Localiser");
   ros::Time::init();
 
@@ -39,63 +59,13 @@ int main(int argc, char** argv) {
 
 
 
-void
-ROSLocaliser::PublishOdometry(Eigen::Vector3d &odometry, Eigen::Vector3d &covariance, ros::Time stamp) {
-
-  // generate an global odometry pose message
-  nav_msgs::Odometry msg;
-  msg.header.stamp = stamp;
-  msg.header.frame_id = "odom";
-  msg.pose.pose.position.x = odometry[0];
-  msg.pose.pose.position.y = odometry[1];
-  // TODO: incorporate orientation
-  //msg.pose.orientation;
-
-  if (publish_odom) {
-    publish_odom(msg, "/localiser/odometry");
-  }
-
-}
-
-
-
-void
-ROSLocaliser::PublishMap(Eigen::Vector3d &map_estimate, Eigen::Vector3d &covariance, ros::Time stamp) {
-
-  // generate an global odometry pose message
-  nav_msgs::Odometry msg;
-  msg.header.stamp = stamp;
-  msg.header.frame_id = "map";
-  msg.pose.pose.position.x = map_estimate[0];
-  msg.pose.pose.position.y = map_estimate[1];
-  // TODO: incorporate orientation
-  //msg.pose.orientation;
-
-  if (publish_odom) {
-    publish_odom(msg, "/localiser/map");
-  }
-
-  // generate an global navsatfix message
-  double lat, lon;
-  gps_common::UTMtoLL(map_estimate[1], map_estimate[0], "56H", lat, lon);
-
-  sensor_msgs::NavSatFix fix_msg;
-  fix_msg.header.frame_id = "map";
-  fix_msg.header.stamp = stamp;
-  fix_msg.latitude = lat;
-  fix_msg.longitude = lon;
-
-  if (publish_fix) {
-    publish_fix(fix_msg, "/localiser/fix");
-  }
-}
-
 
 void
 ROSLocaliser::Initialise() {
 
   // create the localiser manager
-  localiser = std::make_shared<Localiser>();
+  localiser_input = std::make_shared<LocaliserInput>();
+  localiser_output = std::make_shared<LocaliserOutput>();
 
   // bind localiser inputs
   imu = std::make_shared<ImuMeasurement>();
@@ -104,29 +74,29 @@ ROSLocaliser::Initialise() {
   gnss = std::make_shared<GNSSObservation>();
 
   // bind update method
-  map_icp->perform_update = std::bind(&Localiser::Update, localiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-  gnss->perform_update = std::bind(&Localiser::Update, localiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  map_icp->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  gnss->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
   // bind set variables
-  imu->update_pitch = std::bind(&Localiser::SetPitch, localiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-  imu->update_yaw_rate = std::bind(&Localiser::SetYawRate, localiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-  speed->update_speed = std::bind(&Localiser::SetSpeed, localiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  imu->update_pitch = std::bind(&LocaliserInput::SetPitch, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  imu->update_yaw_rate = std::bind(&LocaliserInput::SetYawRate, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  speed->update_speed = std::bind(&LocaliserInput::SetSpeed, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
   // bind prediction trigger
-  imu->perform_prediction = std::bind(&Localiser::Predict, localiser, std::placeholders::_1);
+  imu->perform_prediction = std::bind(&LocaliserInput::Predict, localiser_input, std::placeholders::_1);
 
   // output method
   // publish output or write to bag
   if (0) {
     publisher = std::make_shared<Publisher>();
-    this->publish_odom = std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2);
-    this->publish_fix = std::bind(&Publisher::publish_fix, publisher, std::placeholders::_1, std::placeholders::_2);
+    localiser_output->publish_odom = std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2);
+    localiser_output->publish_fix = std::bind(&Publisher::publish_fix, publisher, std::placeholders::_1, std::placeholders::_2);
   }
   else {
     bag_output = std::make_shared<BagOutput>();
     bag_output->Initialise("test_bag.bag");
-    this->publish_odom = std::bind(&BagOutput::publish_odom, bag_output, std::placeholders::_1, std::placeholders::_2);
-    this->publish_fix = std::bind(&BagOutput::publish_fix, bag_output, std::placeholders::_1, std::placeholders::_2);
+    localiser_output->publish_odom = std::bind(&BagOutput::publish_odom, bag_output, std::placeholders::_1, std::placeholders::_2);
+    localiser_output->publish_fix = std::bind(&BagOutput::publish_fix, bag_output, std::placeholders::_1, std::placeholders::_2);
   }
 
   // localisation method
@@ -134,23 +104,34 @@ ROSLocaliser::Initialise() {
   if (0) {
     // bind localisation method inputs
     gtsam_optimiser = std::make_shared<GtsamOptimiser>();
-    localiser->perform_update = std::bind(&GtsamOptimiser::AddAbsolutePosition, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    localiser->perform_prediction = std::bind(&GtsamOptimiser::AddRelativeMotion, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    localiser_input->perform_update = std::bind(&GtsamOptimiser::AddAbsolutePosition, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    localiser_input->perform_prediction = std::bind(&GtsamOptimiser::AddRelativeMotion, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
     // where to send localisation method outputs
-    gtsam_optimiser->publish_odometry = std::bind(&ROSLocaliser::PublishOdometry, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    gtsam_optimiser->publish_odometry = std::bind(&LocaliserOutput::PublishOdometry, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
   }
-  else {
+  else if(0){
     // bind localisation method inputs
     graph_optimiser = std::make_shared<GraphOptimiser>();
-    localiser->perform_update = std::bind(&GraphOptimiser::AddAbsolutePosition, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    localiser->perform_prediction = std::bind(&GraphOptimiser::AddRelativeMotion, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    localiser_input->perform_update = std::bind(&GraphOptimiser::AddAbsolutePosition, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    localiser_input->perform_prediction = std::bind(&GraphOptimiser::AddRelativeMotion, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
     // where to send localisation method outputs
-    graph_optimiser->publish_odometry = std::bind(&ROSLocaliser::PublishOdometry, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    graph_optimiser->publish_map = std::bind(&ROSLocaliser::PublishMap, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    graph_optimiser->publish_odometry = std::bind(&LocaliserOutput::PublishOdometry, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    graph_optimiser->publish_map = std::bind(&LocaliserOutput::PublishMap, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
   }
+  else {
+    linear_filter = std::make_shared<LinearFilter>();
+
+    localiser_input->perform_update = std::bind(&LinearFilter::AddAbsolutePosition, linear_filter, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    localiser_input->perform_prediction = std::bind(&LinearFilter::AddRelativeMotion, linear_filter, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+
+    // where to send localisation method outputs
+    linear_filter->publish_odometry = std::bind(&LocaliserOutput::PublishOdometry, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    linear_filter->publish_map = std::bind(&LocaliserOutput::PublishMap, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+  }
+
 
   // input method
   // from subscriber or rosbag play
@@ -168,8 +149,6 @@ ROSLocaliser::Initialise() {
   else {
     ROS_INFO_STREAM("Initialised Localiser, reading from bag");
     bag_input = std::make_shared<BagInput>();
-
-    features_pipeline = std::make_shared<PointCloudFeaturesPipeline>();
 
     // odometry update messages (i.e. from ICP)
     // bag_input.odom_update_topics.insert("/localisation/gnss/utm")
@@ -193,10 +172,16 @@ ROSLocaliser::Initialise() {
     bag_input->publish_fix_update = std::bind(&GNSSObservation::receive_message, &(*gnss), std::placeholders::_1);
     bag_input->publish_imu_update = std::bind(&ImuMeasurement::receive_message, &(*imu), std::placeholders::_1);
 
-    bag_input->publish_pointcloud_update = std::bind(&PointCloudFeaturesPipeline::receive_message, &(*features_pipeline), std::placeholders::_1);
+    features_pipeline = std::make_shared<PointCloudFeaturesPipeline>();
+    icp_pipeline = std::make_shared<ICPMatcherPipeline>();
 
+    bag_input->publish_pointcloud_update = std::bind(&PointCloudFeaturesPipeline::receive_message, &(*features_pipeline), std::placeholders::_1);
+    //features_pipeline->publish_poles_corners = std::bind(&ICPMatcherPipeline::receive_message, &(*icp_pipeline), std::placeholders::_1, std::placeholders::_2);
 
     bag_input->ReadBag("/home/stew/data/2019-08-14_callan_park_slow_mapping/2019-08-14-12-09-32_callan_park_slow_mapping.bag");
 
   }
 }
+
+//make a launch for all other things required for pointcloudfeatures pipeline
+//publish transforms

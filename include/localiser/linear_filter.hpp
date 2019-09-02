@@ -3,6 +3,9 @@
 
 #include "localisation_method.hpp"
 
+#include <Eigen/Dense>
+#include <Eigen/Cholesky>
+
 
 #include <cmath>
 #include <string>
@@ -58,6 +61,7 @@
 #include <mrpt/system/os.h>
 #include <iostream>
 
+/*
 using namespace mrpt;
 using namespace mrpt::bayes;
 using namespace mrpt::gui;
@@ -77,217 +81,58 @@ using namespace std;
 
 #define TRANSITION_MODEL_STD_XY 0.03f
 #define TRANSITION_MODEL_STD_VXY 0.20f
-
-#define NUM_PARTICLES 2000
-
-
-// observe speed also ? estimate noise ?
-
-class LinearFilter : public LocalisationMethod,  public mrpt::bayes::CKalmanFilterCapable<3 /* x y yaw*/, 2 /* x y */, 0, 3 /* Atime, speed, yaw rate */> {
-public:
-//  LinearFilter();
-
-
-  Eigen::Matrix3d gps_information;
-  mrpt::obs::CActionRobotMovement2D::TMotionModelOptions motion_model_options_;
-
-
-  void getState(KFVector& xkk, KFMatrix& pkk)
-  {
-      xkk = m_xkk;
-      pkk = m_pkk;
-  }
-
- protected:
-  float m_obsBearing, m_obsRange;
-  float m_deltaTime;
-
-  /*
-  void RunOptimiser();
-
-  g2o::SparseOptimizer global_optimizer;
-
-  Eigen::Vector3d VehicleModel(Eigen::Vector3d &current_pose, Eigen::Vector2d &motion_delta);
-
-  //! Perform the optimisation
-  void AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& covariance, ros::Time stamp);
-
-  void AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Vector3d& covariance, ros::Time stamp);
 */
 
 
+// TODO: observe speed also ? estimate noise ?
 
+class LinearFilter : public LocalisationMethod {
+public:
 
+  LinearFilter();
+  ~LinearFilter();
 
-  LinearFilter()
-  {
-      // KF_options.method = kfEKFNaive;
-      KF_options.method = kfEKFAlaDavison;
+  bool initialised = false;
+  float MINIMUM_INITIALISATION_SPEED = .5;
 
-      // INIT KF STATE
-      m_xkk.resize(4);  // State: (x,y,heading,v,w)
-      m_xkk[0] = VEHICLE_INITIAL_X;
-      m_xkk[1] = VEHICLE_INITIAL_Y;
-      m_xkk[2] = -VEHICLE_INITIAL_V;
-//      m_xkk[3] = 0;
+  // use hard coded uncertainty values from python code
+  float VELOCITY_NOISE = 2.5; // m/s
+  float YAWRATE_NOISE = 1.5; // deg/s
+  float HEADING_ERROR = 2.;// deg
+  float POSITION_ERROR = 1.5; // m
 
-      // Initial cov:  Large uncertainty
-      m_pkk.setSize(3, 3);
-      m_pkk.unit();
-      m_pkk(0, 0) = m_pkk(1, 1) = square(5.0f);
-      m_pkk(2, 2) = square(1.0f);
-  }
+  Eigen::Vector3d state_odom_only;
 
-  ~LinearFilter() {}
+  Eigen::Vector3d state;
+  Eigen::Matrix3d state_var;
 
-  void doProcess(
-      double DeltaTime, double observationRange, double observationBearing)
-  {
-      m_deltaTime = (float)DeltaTime;
-      m_obsBearing = (float)observationBearing;
-      m_obsRange = (float)observationRange;
+  Eigen::Vector2d prior_motion;
+  Eigen::Matrix2d prior_motion_covariance;
+  ros::Time prior_stamp;
 
-      runOneKalmanIteration();
-  }
+  //! Perform the optimisation
+  void AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covariance, ros::Time stamp);
+  void AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp);
 
-  /** Must return the action vector u.
-   * \param out_u The action vector which will be passed to OnTransitionModel
-   */
-  void OnGetAction(KFArray_ACT& u) const { u[0] = m_deltaTime; }
-  /** Implements the transition model \f$ \hat{x}_{k|k-1} = f( \hat{x}_{k-1|k-1},
-   * u_k ) \f$
-   * \param in_u The vector returned by OnGetAction.
-   * \param inout_x At input has \f$ \hat{x}_{k-1|k-1} \f$, at output must have
-   * \f$ \hat{x}_{k|k-1} \f$.
-   * \param out_skip Set this to true if for some reason you want to skip the
-   * prediction step (to do not modify either the vector or the covariance).
-   * Default:false
-   */
-  void OnTransitionModel(
-      const KFArray_ACT& in_u, KFArray_VEH& inout_x,
-      bool& out_skipPrediction) const
-  {
-      // in_u[0] : Delta time
-      // in_out_x: [0]:x  [1]:y  [3]:heading
-      inout_x[0] += in_u[0] * inout_x[2];
-      inout_x[1] += in_u[0] * inout_x[3];
-  }
+  void BoundHeading(const Eigen::Vector3d &current_state, Eigen::Vector3d &observation);
 
-  /** Implements the transition Jacobian \f$ \frac{\partial f}{\partial x} \f$
-   * \param out_F Must return the Jacobian.
-   *  The returned matrix must be \f$N \times N\f$ with N being either the size
-   * of the whole state vector or get_vehicle_size().
-   */
-  void OnTransitionJacobian(KFMatrix_VxV& F) const
-  {
-      F.unit();
+  void test_predict();
+  void test_update();
 
-      F(0, 2) = m_deltaTime;
-      F(1, 3) = m_deltaTime;
-  }
+  // Functions to implement for the specific problem being applied to the filter
+  Eigen::Vector3d vehicle_model(Eigen::Vector3d &mean, Eigen::Vector2d &input_state);
+  Eigen::Vector3d observation_model(Eigen::Vector3d state, Eigen::Vector3d observation);
+  Eigen::Matrix3d transition_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state);
+  Eigen::MatrixXd jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state);
 
-  /** Implements the transition noise covariance \f$ Q_k \f$
-   * \param out_Q Must return the covariance matrix.
-   *  The returned matrix must be of the same size than the jacobian from
-   * OnTransitionJacobian
-   */
-  void OnTransitionNoise(KFMatrix_VxV& Q) const
-  {
-      Q(0, 0) = Q(1, 1) = square(TRANSITION_MODEL_STD_XY);
-      Q(2, 2) = Q(3, 3) = square(TRANSITION_MODEL_STD_VXY);
-  }
+private:
 
-  /** Return the observation NOISE covariance matrix, that is, the model of the
-   * Gaussian additive noise of the sensor.
-   * \param out_R The noise covariance matrix. It might be non diagonal, but it'll
-   * usually be.
-   * \note Upon call, it can be assumed that the previous contents of out_R are
-   * all zeros.
-   */
-  void OnGetObservationNoise(KFMatrix_OxO& R) const
-  {
-      R(0, 0) = square(BEARING_SENSOR_NOISE_STD);
-      R(1, 1) = square(RANGE_SENSOR_NOISE_STD);
-  }
+  void update(Eigen::Vector3d &observation,
+              Eigen::Matrix3d &observation_noise/*,
+              Eigen::Matrix3d &observation_matrix,
+              uint64_t observation_timestamp*/);
 
-  void OnGetObservationsAndDataAssociation(
-      vector_KFArray_OBS& out_z, std::vector<int>& out_data_association,
-      const vector_KFArray_OBS& in_all_predictions, const KFMatrix& in_S,
-      const std::vector<size_t>& in_lm_indices_in_S, const KFMatrix_OxO& in_R)
-  {
-      out_z.resize(1);
-      out_z[0][0] = m_obsBearing;
-      out_z[0][1] = m_obsRange;
-
-      out_data_association.clear();  // Not used
-  }
-
-  /** Implements the observation prediction \f$ h_i(x) \f$.
-   * \param idx_landmark_to_predict The indices of the landmarks in the map whose
-   * predictions are expected as output. For non SLAM-like problems, this input
-   * value is undefined and the application should just generate one observation
-   * for the given problem.
-   * \param out_predictions The predicted observations.
-   */
-  void OnObservationModel(
-      const std::vector<size_t>& idx_landmarks_to_predict,
-      vector_KFArray_OBS& out_predictions) const
-  {
-      // predicted bearing:
-      kftype x = m_xkk[0];
-      kftype y = m_xkk[1];
-
-      kftype h_bear = atan2(y, x);
-      kftype h_range = sqrt(square(x) + square(y));
-
-      // idx_landmarks_to_predict is ignored in NON-SLAM problems
-      out_predictions.resize(1);
-      out_predictions[0][0] = h_bear;
-      out_predictions[0][1] = h_range;
-  }
-
-  /** Implements the observation Jacobians \f$ \frac{\partial h_i}{\partial x} \f$
-   * and (when applicable) \f$ \frac{\partial h_i}{\partial y_i} \f$.
-   * \param idx_landmark_to_predict The index of the landmark in the map whose
-   * prediction is expected as output. For non SLAM-like problems, this will be
-   * zero and the expected output is for the whole state vector.
-   * \param Hx  The output Jacobian \f$ \frac{\partial h_i}{\partial x} \f$.
-   * \param Hy  The output Jacobian \f$ \frac{\partial h_i}{\partial y_i} \f$.
-   */
-  void OnObservationJacobians(
-      const size_t& idx_landmark_to_predict, KFMatrix_OxV& Hx,
-      KFMatrix_OxF& Hy) const
-  {
-      // predicted bearing:
-      kftype x = m_xkk[0];
-      kftype y = m_xkk[1];
-
-      Hx.zeros();
-      Hx(0, 0) = -y / (square(x) + square(y));
-      Hx(0, 1) = 1 / (x * (1 + square(y / x)));
-
-      Hx(1, 0) = x / sqrt(square(x) + square(y));
-      Hx(1, 1) = y / sqrt(square(x) + square(y));
-
-      // Hy: Not used
-  }
-
-  /** Computes A=A-B, which may need to be re-implemented depending on the
-   * topology of the individual scalar components (eg, angles).
-   */
-  void OnSubstractObservationVectors(
-      KFArray_OBS& A, const KFArray_OBS& B) const
-  {
-      A -= B;
-      math::wrapToPiInPlace(A[0]);  // The angular component
-  }
-
-
-
-
-
-
-
+  void predict(Eigen::Vector2d input_state, Eigen::Matrix2d input_state_variance);
 
 
 

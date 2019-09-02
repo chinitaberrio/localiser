@@ -18,6 +18,9 @@ public:
 
   void receive_message(const sensor_msgs::PointCloud2::ConstPtr& input_pointcloud);
 
+  std::function<void(const pcl::PointCloud<pcl::PointXYZIRC>::Ptr&, const pcl::PointCloud<pcl::PointXYZIRC>::Ptr&)> publish_poles_corners;
+
+
 private:
   PipelineInput<pcl::PointCloud<pcl::PointXYZIR>> input_pointcloud;
   PipelineOutput<pcl::PointCloud<pcl::PointXYZIRC>> output_poles, output_corners;

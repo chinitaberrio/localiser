@@ -128,7 +128,7 @@ GtsamOptimiser::VehicleModel(Eigen::Vector3d &current_pose, Eigen::Vector2d &mot
 
 //! Perform the optimisation
 void
-GtsamOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& covariance, ros::Time stamp) {
+GtsamOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covariance, ros::Time stamp) {
   //! Use a fixed delta_t (100Hz) until the timing issues with the vectornav is fixed
   double delta_t = 0.01;
   motion *= delta_t;
@@ -209,7 +209,8 @@ GtsamOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
 
   }
 
-  Eigen::Vector3d pose_covariance(0,0,0);
+  Eigen::Matrix3d pose_covariance;
+  pose_covariance << 0., 0., 0., 0., 0., 0., 0., 0., 0.;
   if (publish_odometry) {
     publish_odometry(odom_state_eigen, pose_covariance, stamp);
   }
@@ -227,7 +228,7 @@ GtsamOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
 }
 
 void
-GtsamOptimiser::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Vector3d& covariance, ros::Time stamp) {
+GtsamOptimiser::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp) {
 
   if(prior_odometry.size() == 0) {
     return;

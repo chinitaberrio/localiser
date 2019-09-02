@@ -158,7 +158,7 @@ GraphOptimiser::VehicleModel(mrpt::poses::CPose2D &previous_pose, Eigen::Vector2
 
 //! Perform the optimisation
 void
-GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& covariance, ros::Time stamp){
+GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covariance, ros::Time stamp){
 
   // don't add graph elements while stationary (According to the odometry)
   if (motion(0) == 0){
@@ -250,20 +250,28 @@ GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Vector2d& cova
   Eigen::Vector3d map_pose(data[0] + datum_x, data[1] + datum_y, data[2]);
 
   // TODO: correct the uncertainty measurements
-  Eigen::Vector3d map_uncertainty(0.,0.,0.);
-  Eigen::Vector3d odom_uncertainty(0.,0.,0.);
+  Eigen::Matrix3d map_uncertainty;
+  Eigen::Matrix3d odom_uncertainty;
+
+  map_uncertainty << 0., 0., 0.,
+                     0., 0., 0.,
+                     0., 0., 0.;
+
+  odom_uncertainty << 0., 0., 0.,
+                      0., 0., 0.,
+                      0., 0., 0.;
 
   if (publish_odometry)
     publish_odometry(odom_state_eigen, odom_uncertainty, stamp);
 
   if (publish_map)
-    publish_map(map_pose, map_uncertainty, stamp);
+    publish_map(map_pose, map_uncertainty, odom_state_eigen, stamp);
 
   current_index += 1;
 }
 
 void
-GraphOptimiser::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Vector3d& covariance, ros::Time stamp) {
+GraphOptimiser::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp) {
 
   // find the nearest relative odometry index corresponding to this observation
   uint32_t nearest_odometry_vertex = 0;

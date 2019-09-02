@@ -1,5 +1,5 @@
-#ifndef localiser_h
-#define localiser_h
+#ifndef localiser_input_h
+#define localiser_input_h
 
 #include <ros/ros.h>
 
@@ -17,16 +17,15 @@
  *
  */
 
-class Localiser {
+class LocaliserInput {
 public:
-  Localiser();
-
+  LocaliserInput();
 
   //! Pass the update vector to the localisation method
-  std::function<void(Eigen::Vector3d&, Eigen::Vector3d&, ros::Time)> perform_update;
+  std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, ros::Time)> perform_update;
 
   //! Pass the prediction vector to the localisation method
-  std::function<void(Eigen::Vector2d&, Eigen::Vector2d&, ros::Time)> perform_prediction;
+  std::function<void(Eigen::Vector2d&, Eigen::Matrix2d&, ros::Time)> perform_prediction;
 
 
   void SetPitch(double pitch, double variance, ros::Time stamp);
@@ -37,7 +36,7 @@ public:
   void Predict(ros::Time stamp);
 
   //! Perform the update
-  void Update(Eigen::Vector3d &observation, Eigen::Vector3d &covariance, ros::Time stamp);
+  void Update(Eigen::Vector3d &observation, Eigen::Matrix3d &covariance, ros::Time stamp);
 
   std::vector<std::shared_ptr<Predictor>> predictors;
   std::vector<std::shared_ptr<Observer>> observers;
