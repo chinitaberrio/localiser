@@ -31,7 +31,7 @@ LocaliserOutput::PublishOdometry(Eigen::Vector3d &odometry, Eigen::Matrix3d &cov
   msg.pose.pose.orientation.w = orientation[3];
 
   if (publish_odom) {
-    publish_odom(msg, "/localiser/odometry");
+    publish_odom(msg, "odometry");
   }
 
   tf::Transform transform;
@@ -39,7 +39,10 @@ LocaliserOutput::PublishOdometry(Eigen::Vector3d &odometry, Eigen::Matrix3d &cov
   tf::Quaternion q;
   q.setRPY(0, 0, odometry[2]);
   transform.setRotation(q);
-  transform_broadcaster.sendTransform(tf::StampedTransform(transform, stamp, "odom", "base_link"));
+  tf::StampedTransform odom_baselink_tf(transform, stamp, "odom", "base_link");
+  transform_broadcaster.sendTransform(odom_baselink_tf);
+
+  //transform_buffer.setTransform(odom_baselink_tf, "zio");
 
 }
 
@@ -63,7 +66,7 @@ LocaliserOutput::PublishMap(Eigen::Vector3d &map_estimate, Eigen::Matrix3d &cova
   msg.pose.pose.orientation.w = orientation[3];
 
   if (publish_odom) {
-    publish_odom(msg, "/localiser/map");
+    publish_odom(msg, "map");
   }
 
   // generate an global navsatfix message
@@ -77,7 +80,7 @@ LocaliserOutput::PublishMap(Eigen::Vector3d &map_estimate, Eigen::Matrix3d &cova
   fix_msg.longitude = lon;
 
   if (publish_fix) {
-    publish_fix(fix_msg, "/localiser/fix");
+    publish_fix(fix_msg, "fix");
   }
 
   if (datum_x == 0. || datum_y == 0.) {
@@ -105,6 +108,8 @@ LocaliserOutput::PublishMap(Eigen::Vector3d &map_estimate, Eigen::Matrix3d &cova
     tf::Quaternion q;
     q.setRPY(0., 0., 0.);
     transform.setRotation(q);
-    transform_broadcaster.sendTransform(tf::StampedTransform(transform, stamp, "map", "odom"));
+    tf::StampedTransform map_odom_tf(transform, stamp, "map", "odom");
+    transform_broadcaster.sendTransform(map_odom_tf);
+    //transform_buffer.setTransform(map_odom_tf, "zio");
   }
 }

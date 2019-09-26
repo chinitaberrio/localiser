@@ -166,6 +166,11 @@ GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& cova
     return;
   }
 
+  //how to do this
+  // Fix the heading of the odometry source - the odom transform is continuous in position but not in heading
+  //odom_state.phi(map_pose[2]);
+
+
 
   g2o::VertexSE2* odom_pose_vertex = new g2o::VertexSE2;
   odom_pose_vertex->setId(current_index);
@@ -176,7 +181,7 @@ GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& cova
   motion *= delta_t;
 
   odom_state = this->VehicleModel(odom_state, motion);
-  Eigen::Vector3d odom_state_eigen(odom_state.x(),odom_state.y(),odom_state.phi());
+  odom_state_eigen = Eigen::Vector3d(odom_state.x(),odom_state.y(),odom_state.phi());
 
   if (global_optimizer.vertices().size() > 0) {
     std::vector<double> data(3);

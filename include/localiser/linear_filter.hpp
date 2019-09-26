@@ -112,32 +112,74 @@ public:
 
   //! Perform the optimisation
   void AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covariance, ros::Time stamp);
-  void AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp);
+  virtual void AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp) {}
 
   void BoundHeading(const Eigen::Vector3d &current_state, Eigen::Vector3d &observation);
 
-  void test_predict();
-  void test_update();
 
   // Functions to implement for the specific problem being applied to the filter
-  Eigen::Vector3d vehicle_model(Eigen::Vector3d &mean, Eigen::Vector2d &input_state);
-  Eigen::Vector3d observation_model(Eigen::Vector3d state, Eigen::Vector3d observation);
-  Eigen::Matrix3d transition_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state);
-  Eigen::MatrixXd jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state);
+  virtual Eigen::Vector3d vehicle_model(const Eigen::Vector3d &mean, const Eigen::Vector2d &input_state) {}
+  virtual Eigen::VectorXd observation_model(const Eigen::VectorXd state, const Eigen::VectorXd observation) {}
+  virtual Eigen::Matrix3d transition_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state) {}
+  virtual Eigen::MatrixXd jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state) {}
 
-private:
 
-  void update(Eigen::Vector3d &observation,
-              Eigen::Matrix3d &observation_noise/*,
-              Eigen::Matrix3d &observation_matrix,
+protected:
+
+  void update(const Eigen::VectorXd &observation,
+              const Eigen::MatrixXd &observation_noise,
+              const Eigen::MatrixXd &observation_matrix/*,
               uint64_t observation_timestamp*/);
 
-  void predict(Eigen::Vector2d input_state, Eigen::Matrix2d input_state_variance);
+  void predict(const Eigen::VectorXd input_state, const Eigen::MatrixXd input_state_variance);
 
 
 
 
 };
+
+
+class PositionHeadingEKF : public LinearFilter {
+
+public:
+
+  PositionHeadingEKF() : LinearFilter() {}
+
+  // Functions to implement for the specific problem being applied to the filter
+  Eigen::Vector3d vehicle_model(const Eigen::Vector3d &mean, const Eigen::Vector2d &input_state);
+  Eigen::VectorXd observation_model(const Eigen::VectorXd state, const Eigen::VectorXd observation);
+  Eigen::Matrix3d transition_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state);
+  Eigen::MatrixXd jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state);
+
+  void AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp);
+
+  void test_predict();
+  void test_update();
+
+};
+
+
+
+class PositionOnlyEKF : public LinearFilter {
+
+public:
+
+  PositionOnlyEKF() : LinearFilter() {}
+
+  // Functions to implement for the specific problem being applied to the filter
+  Eigen::Vector3d vehicle_model(const Eigen::Vector3d &mean, const Eigen::Vector2d &input_state);
+  Eigen::VectorXd observation_model(const Eigen::VectorXd state, const Eigen::VectorXd observation);
+  Eigen::Matrix3d transition_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state);
+  Eigen::MatrixXd jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state);
+
+  void AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp);
+
+
+  void test_predict();
+  void test_update();
+
+};
+
 
 
 #endif

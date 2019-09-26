@@ -46,6 +46,7 @@ public:
 
   void PublishMap(Eigen::Vector3d &map_estimate, Eigen::Matrix3d &covariance, Eigen::Vector3d &odom_delta, ros::Time stamp);
 
+  tf2_ros::Buffer transform_buffer;
 
 private:
 

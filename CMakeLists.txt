@@ -68,9 +68,21 @@ find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 
 find_package(PCL REQUIRED)
-include_directories(${PCL_INCLUDE_DIRS})
+#include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
+
+## Generate services in the 'srv' folder
+add_service_files(
+        FILES
+        instruct_localiser.srv
+)
+
+## Generate added messages and services with any dependencies listed here
+generate_messages(
+        DEPENDENCIES
+        std_msgs  # Or other packages containing msgs
+)
 
 catkin_package(
         CATKIN_DEPENDS
@@ -87,9 +99,11 @@ include_directories(
   ${EIGEN3_INCLUDE_DIRS}
   ${CSPARSE_INCLUDE_DIR}
   ${G2O_INCLUDE_DIRS}
-    ${MRPT_LIBS}
+  ${MRPT_LIBS}
   gtsam
   include/${PROJECT_NAME}
+  include
+  ${PCL_INCLUDE_DIRS}
 )
 
 # collect all g2o libs

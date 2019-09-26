@@ -7,15 +7,6 @@
 #include "gtsam_optimiser.hpp"
 #include "linear_filter.hpp"
 
-#include <sensor_msgs/PointCloud2.h>
-#include <tf2/LinearMath/Transform.h>
-#include <tf2_ros/buffer.h>
-
-#include <Eigen/Core>
-#include <Eigen/StdVector>
-
-#include <vector>
-
 #include "bag_input.hpp"
 #include "bag_output.hpp"
 #include "publisher.hpp"
@@ -26,6 +17,9 @@
 #include "point_cloud_features_pipeline.hpp"
 #include "icp_matcher_pipeline.hpp"
 
+#include "localiser/instruct_localiser.h"
+
+
 /*!
  * \brief The class that manages the localisation process
  *
@@ -33,7 +27,8 @@
 
 class ROSLocaliser {
 public:
-  ROSLocaliser() {}
+
+  ROSLocaliser();
 
   void Initialise();
 
@@ -43,8 +38,6 @@ public:
 
   std::shared_ptr<LocaliserInput> localiser_input;
   std::shared_ptr<LocaliserOutput> localiser_output;
-
-  std::vector<ros::Subscriber> subscribers;
 
   std::shared_ptr<PointCloudFeaturesPipeline> features_pipeline;
   std::shared_ptr<ICPMatcherPipeline> icp_pipeline;
@@ -57,8 +50,18 @@ public:
 
   std::shared_ptr<GraphOptimiser> graph_optimiser;
   std::shared_ptr<GtsamOptimiser> gtsam_optimiser;
-  std::shared_ptr<LinearFilter> linear_filter;
+  std::shared_ptr<PositionOnlyEKF> linear_filter;
 
+  ros::ServiceServer service;
+
+
+  bool InstructionCallback(localiser::instruct_localiser::Request& req,
+                           localiser::instruct_localiser::Response& res) {
+
+
+
+    return true;
+  }
 
 };
 

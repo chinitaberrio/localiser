@@ -24,6 +24,8 @@
 #include <tf2/utils.h>
 
 
+// TODO: vehicle model and odometry calculated in the parent class (this should be common to each method)
+
 class LocalisationMethod {
 
 public:
@@ -34,6 +36,8 @@ public:
 
   //! Callback to publish map information
   std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, Eigen::Vector3d&, ros::Time)> publish_map;
+
+
 
   // Current estimate of the robot state (map frame, odom frame)
   Eigen::Vector3d map_state;
