@@ -17,6 +17,7 @@
 #include <Eigen/StdVector>
 
 
+
 GraphOptimiser::GraphOptimiser() :
   LocalisationMethod(),
   predict_countdown(1),
@@ -331,9 +332,7 @@ GraphOptimiser::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3
   previous_observation_stamp = stamp;
 }
 
-  Eigen::Vector3d est = dynamic_cast<VertexSE2*>(global_optimizer.vertex(current_index - 1))->estimate().toVector();
 
-  current_pose = CPosePDFGaussian(CPose2D(est(0),est(1),est(2)), mrpt::math::CMatrixDouble33(cov));
 
 void
 GraphOptimiser::RunOptimiser() {
