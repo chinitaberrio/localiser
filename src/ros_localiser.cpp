@@ -61,6 +61,32 @@ ROSLocaliser::ROSLocaliser() :
 }
 
 
+bool
+ROSLocaliser::InstructionCallback(localiser::instruct_localiser::Request& req,
+    localiser::instruct_localiser::Response& res) {
+
+  /*# enum of instructionType
+uint8 RESET=0
+uint8 MAP_ON=1
+uint8 MAP_OFF=2
+uint8 ABS_ON=3
+uint8 ABS_OFF=4
+bool SUCCESS=True
+bool FAILURE=False
+##########################
+
+uint8 instructionType
+---
+bool status
+   */
+
+  ROS_INFO_STREAM("received localiser instruction " << req.instructionType);
+  res.status = true;
+
+  return true;
+}
+
+
 
 void
 ROSLocaliser::Initialise() {

@@ -78,6 +78,8 @@ void BagInput::ReadBag(std::string bag_file) {
 
     if (!ros::ok())
       break;
+
+    ros::spinOnce();
   }
 
   bag->close();

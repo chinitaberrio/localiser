@@ -103,6 +103,10 @@ LocaliserOutput::PublishMap(Eigen::Vector3d &map_estimate, Eigen::Matrix3d &cova
     tf::Vector3 map_odom_delta(odom_delta[0], odom_delta[1], 0.0);
     tf::Vector3 datum(datum_x, datum_y, 0.0);
 
+
+
+
+
     // map to odom transform is translation only, no rotation
     transform.setOrigin(map_position - map_odom_delta - datum);
     tf::Quaternion q;
