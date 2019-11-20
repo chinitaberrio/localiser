@@ -2,7 +2,9 @@
 # Catkin CMake Standard: http://www.ros.org/doc/groovy/api/catkin/html/user_guide/standards.html
 cmake_minimum_required(VERSION 2.8.3)
 project(localiser)
-add_definitions(-std=c++11)
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
 # default built type
 IF(NOT CMAKE_BUILD_TYPE)
@@ -23,30 +25,22 @@ if (MRPT_VERSION VERSION_LESS 2.0.0)
   set(CMAKE_CXX_FLAGS "-Wno-deprecated-declarations ${CMAKE_CXX_FLAGS}")
 endif()
 
-
-#find catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roslib
   roscpp
   gps_common
-#  libg2o
-#  pcl_conversions
-#  pcl_ros
-#  point_cloud_features
+  custom_point_types
+  dataset_tools
   tf
   std_msgs
   nav_msgs
   sensor_msgs
   mrpt_bridge
-#  visualization_msgs
-#  mrpt_bridge
-#  dynamic_reconfigure
   roslaunch
   rosbag
   tf2
   tf2_geometry_msgs
-#  tf2_sensor_msgs
-  )
+)
 
 #find mrpt packages
 #find_package(MRPT REQUIRED base gui obs slam)
@@ -85,8 +79,8 @@ generate_messages(
 )
 
 catkin_package(
-        CATKIN_DEPENDS
-        nav_msgs sensor_msgs std_msgs sensor_msgs mrpt_bridge rosbag
+  CATKIN_DEPENDS nav_msgs sensor_msgs std_msgs sensor_msgs mrpt_bridge rosbag
+  INCLUDE_DIRS include
 )
 
 ###########
@@ -143,9 +137,6 @@ add_executable(${PROJECT_NAME}
     src/graph_optimiser.cpp
     src/gtsam_optimiser.cpp
     src/publisher.cpp
-    src/bag_output.cpp
-    src/bag_input.cpp
-    src/run_pipeline.cpp
     src/point_cloud_features_pipeline.cpp
     src/icp_matcher_pipeline.cpp
     #src/icp_map_maker.cpp

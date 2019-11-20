@@ -5,10 +5,10 @@
 #ifndef LOCALISER_ICP_MATCHER_PIPELINE_HPP
 #define LOCALISER_ICP_MATCHER_PIPELINE_HPP
 
-#include "run_pipeline.hpp"
+#include "dataset_tools/run_pipeline.hpp"
 
-#include "point_xyzir.h"
-#include "point_xyzirc.h"
+#include "custom_point_types/point_xyzir.h"
+#include "custom_point_types/point_xyzirc.h"
 
 class ICPMatcherPipeline : public RunPipeline {
 

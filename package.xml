@@ -20,40 +20,10 @@
   <depend>mrpt_bridge</depend>
   <depend>gps_common</depend>
   <depend>std_msgs</depend>
+  <depend>custom_point_types</depend>
+  <depend>dataset_tools</depend>
   <depend>sensor_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>libsuitesparse-dev</depend>  <!-- required for graph optimisation -->
- <!-- 
-  <build_depend>visualization_msgs</build_depend>
-  <build_depend>mrpt_bridge</build_depend>
-  <build_depend>dynamic_reconfigure</build_depend>
-  <build_depend>rviz</build_depend>
-  <build_depend>mrpt_rawlog</build_depend>
-  <build_depend>mrpt</build_depend>
-  <build_depend>libpcl-all-dev</build_depend>
-  <build_depend>pcl_conversions</build_depend>
-  <build_depend>pcl_ros</build_depend>
-  <build_depend>libpqxx</build_depend>
-  <build_depend>libpqxx-dev</build_depend>
 
-  <run_depend>libpqxx</run_depend>
-  <run_depend>pcl_ros</run_depend>
-  <run_depend>pcl_conversions</run_depend>
-  <run_depend>rospy</run_depend>
-  <run_depend>visualization_msgs</run_depend>
-  <run_depend>mrpt_bridge</run_depend>
-  <run_depend>dynamic_reconfigure</run_depend>
-  <run_depend>rviz</run_depend>
-  <run_depend>mrpt_rawlog</run_depend>
-  <run_depend>mrpt</run_depend> 
-
-  <build_depend>point_cloud_features</build_depend>
-  <run_depend>point_cloud_features</run_depend>
-  <build_depend>tf2</build_depend>
-  <run_depend>tf2</run_depend>
-  <build_depend>tf2_geometry_msgs</build_depend>
-  <run_depend>tf2_geometry_msgs</run_depend>
-  <build_depend>tf2_sensor_msgs</build_depend>
-  <run_depend>tf2_sensor_msgs</run_depend>
-  -->
 </package>

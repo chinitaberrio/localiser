@@ -1,0 +1,8 @@
+<launch>
+  <group ns="localiser">
+    <node pkg="localiser" type="localiser" name="localiser" output="screen">
+        <param name="output_bag" value="/home/stew/data/ibeo-localiser-test.bag" />
+        <param name="input_bag" value="/home/stew/data/ibeo-processed/20191024_050547.0.bag" />
+    </node>
+  </group>
+</launch>

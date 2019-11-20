@@ -5,8 +5,8 @@
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/NavSatFix.h>
 
-#include "point_xyzir.h"
-#include "point_xyzirc.h"
+#include "custom_point_types/point_xyzir.h"
+#include "custom_point_types/point_xyzirc.h"
 
 
 /*!

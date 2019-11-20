@@ -172,6 +172,17 @@ ROSLocaliser::Initialise() {
     subscribers.push_back(n.subscribe("/zio/odometry/rear", 1000, &SpeedMeasurement::receive_message, &(*speed)));
     subscribers.push_back(n.subscribe("/velodyne/front/poles/average", 1000, &ICPObservation::receive_message, &(*map_icp)));
 
+
+
+
+
+//todo: make a list of topics for each type of message
+//todo: in the localiser_input/output set the bind/unbind as required
+
+
+
+
+
     ros::spin();
   }
   else {
@@ -183,13 +194,16 @@ ROSLocaliser::Initialise() {
 
     // GNSS fix messages
     bag_input->fix_update_topics.insert("/ublox_gps/fix");
+    bag_input->fix_update_topics.insert("ibeo/gnss");
 
     // speed odometry messages
     bag_input->odom_speed_topics.insert("/zio/odometry/rear");
     bag_input->odom_speed_topics.insert("/vn100/odometry");
+    bag_input->odom_speed_topics.insert("ibeo/odometry");
 
     // imu topics
     bag_input->imu_topics.insert("/vn100/imu");
+    bag_input->imu_topics.insert("xsens/IMU");
 
     // imu topics
     bag_input->pointcloud_topics.insert("/velodyne/front/filtered");
