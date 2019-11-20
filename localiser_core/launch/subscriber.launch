@@ -1,0 +1,6 @@
+<launch>
+  <group ns="localiser">
+    <node pkg="localiser" type="localiser" name="localiser" output="screen">
+    </node>
+  </group>
+</launch>
