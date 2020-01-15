@@ -113,6 +113,7 @@ ROSLocaliser::Initialise() {
     publisher = std::make_shared<Publisher>();
     localiser_output->publish_odom = std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2);
     localiser_output->publish_fix = std::bind(&Publisher::publish_fix, publisher, std::placeholders::_1, std::placeholders::_2);
+    localiser_output->publish_tf = std::bind(&Publisher::publish_tf, publisher, std::placeholders::_1, std::placeholders::_2);
   }
   else {
     ROS_INFO_STREAM("[OUTPUT] Writing to bagfile " << output_bag);
@@ -120,6 +121,7 @@ ROSLocaliser::Initialise() {
     bag_output->Initialise(output_bag);
     localiser_output->publish_odom = std::bind(&BagOutput::publish_odom, bag_output, std::placeholders::_1, std::placeholders::_2);
     localiser_output->publish_fix = std::bind(&BagOutput::publish_fix, bag_output, std::placeholders::_1, std::placeholders::_2);
+    localiser_output->publish_tf = std::bind(&BagOutput::publish_tf, bag_output, std::placeholders::_1, std::placeholders::_2);
   }
 
   // localisation method
@@ -134,7 +136,7 @@ ROSLocaliser::Initialise() {
     gtsam_optimiser->publish_odometry = std::bind(&LocaliserOutput::PublishOdometry, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
   }
-  else if(0){
+  else if(false){
     // bind localisation method inputs
     graph_optimiser = std::make_shared<GraphOptimiser>();
     localiser_input->perform_update = std::bind(&GraphOptimiser::AddAbsolutePosition, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
@@ -143,6 +145,15 @@ ROSLocaliser::Initialise() {
     // where to send localisation method outputs
     graph_optimiser->publish_odometry = std::bind(&LocaliserOutput::PublishOdometry, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     graph_optimiser->publish_map = std::bind(&LocaliserOutput::PublishMap, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+  }
+  else if(false){
+    // DO WITHOUT SAVING YET TO THE FILE
+    // bind localisation method inputs
+    graph_optimiser = std::make_shared<GraphOptimiser>();
+    localiser_input->perform_update = std::bind(&GraphOptimiser::AddAbsolutePosition, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    localiser_input->perform_prediction = std::bind(&GraphOptimiser::AddRelativeMotion, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+
+    graph_optimiser->run_optimiser_each_observation = false;
   }
   else {
     linear_filter = std::make_shared<PositionOnlyEKF>();
@@ -217,10 +228,13 @@ ROSLocaliser::Initialise() {
     features_pipeline = std::make_shared<PointCloudFeaturesPipeline>();
     icp_pipeline = std::make_shared<ICPMatcherPipeline>();
 
-    //bag_input->publish_pointcloud_update = std::bind(&PointCloudFeaturesPipeline::receive_message, &(*features_pipeline), std::placeholders::_1);
-    //features_pipeline->publish_poles_corners = std::bind(&ICPMatcherPipeline::receive_message, &(*icp_pipeline), std::placeholders::_1, std::placeholders::_2);
+    bag_input->publish_pointcloud_update = std::bind(&PointCloudFeaturesPipeline::receive_message, &(*features_pipeline), std::placeholders::_1);
+    features_pipeline->publish_poles_corners = std::bind(&ICPMatcherPipeline::receive_message, &(*icp_pipeline), std::placeholders::_1, std::placeholders::_2);
 
     bag_input->ReadBag(input_bag);
+
+    //graph_optimiser->global_optimizer.save("/home/stew/full.g2o");
+    //graph_optimiser->RunOptimiser(true);
 
   }
 }

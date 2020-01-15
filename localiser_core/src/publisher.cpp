@@ -1,7 +1,6 @@
 ﻿#include "publisher.hpp"
 
 
-#include <tf/transform_datatypes.h>
 
 #include <tf2_msgs/TFMessage.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
@@ -28,6 +27,14 @@ void Publisher::publish_fix(sensor_msgs::NavSatFix &msg, std::string topic_name)
   }
 
   publishers[topic_name].publish(msg);
+}
+
+
+void
+Publisher::publish_tf(tf::StampedTransform &msg, std::string topic_name) {
+
+  transform_broadcaster.sendTransform(msg);
+
 }
 
 

@@ -9,12 +9,11 @@
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/NavSatFix.h>
+#include <tf2_msgs/TFMessage.h>
 
-//
-//#include <Eigen/Core>
-//#include <Eigen/StdVector>
-//
-//#include <vector>
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_datatypes.h>
+
 
 
 
@@ -31,8 +30,11 @@ public:
 
   void publish_odom(nav_msgs::Odometry &msg, std::string topic_name);
   void publish_fix(sensor_msgs::NavSatFix &msg, std::string topic_name);
+  void publish_tf(tf::StampedTransform &msg, std::string topic_name);
 
   std::map<std::string, ros::Publisher> publishers;
+  tf::TransformBroadcaster transform_broadcaster;
+
   ros::Publisher pub;
 };
 

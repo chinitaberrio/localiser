@@ -106,7 +106,9 @@ public:
 
   uint32_t previous_odom_vertex_id;
 
-  void RunOptimiser();
+  void RunOptimiser(bool global = false);
+
+  bool run_optimiser_each_observation = true;
 
   ros::Time last_odometry;
 

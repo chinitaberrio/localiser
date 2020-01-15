@@ -318,7 +318,7 @@ GraphOptimiser::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3
     edge_deque.pop_front();
 
   // no point to optimise without at least two observations
-  if (edge_deque.size() > 2)
+  if (run_optimiser_each_observation && edge_deque.size() > 2)
     this->RunOptimiser();
 
   // extract the best position estimate after optimisation
@@ -335,14 +335,16 @@ GraphOptimiser::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3
 
 
 void
-GraphOptimiser::RunOptimiser() {
+GraphOptimiser::RunOptimiser(bool global) {
   // Align feature map to utm frame
   auto start = std::chrono::steady_clock::now();
 
   g2o::HyperGraph::EdgeSet edge_set;
 
-  for (auto edge_subset: edge_deque) {
-    edge_set.insert(edge_subset.begin(), edge_subset.end());
+  if (!global) {
+    for (auto edge_subset: edge_deque) {
+      edge_set.insert(edge_subset.begin(), edge_subset.end());
+    }
   }
 
   if (global_optimizer.vertices().size() < 2) {
@@ -351,7 +353,13 @@ GraphOptimiser::RunOptimiser() {
                                   << " vertices");
   }
   else {
-    global_optimizer.initializeOptimization(edge_set);
+    if (global) {
+      global_optimizer.initializeOptimization();
+    }
+    else {
+      global_optimizer.initializeOptimization(edge_set);
+    }
+
     global_optimizer.optimize(3);
   }
 

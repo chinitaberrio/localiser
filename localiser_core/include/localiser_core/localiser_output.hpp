@@ -15,7 +15,6 @@
 #include <tf2/LinearMath/Quaternion.h>
 
 #include <tf/transform_listener.h>
-#include <tf/transform_broadcaster.h>
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/NavSatFix.h>
@@ -33,7 +32,6 @@ class LocaliserOutput {
 public:
   LocaliserOutput();
 
-  tf::TransformBroadcaster transform_broadcaster;
   tf::TransformListener transform_listener;
   float datum_x, datum_y;
 
@@ -43,6 +41,7 @@ public:
   // functions to bind to that will provide the ros output messages
   std::function<void(nav_msgs::Odometry&, std::string)> publish_odom;
   std::function<void(sensor_msgs::NavSatFix&, std::string)> publish_fix;
+  std::function<void(tf::StampedTransform&, std::string)> publish_tf;
 
   void PublishMap(Eigen::Vector3d &map_estimate, Eigen::Matrix3d &covariance, Eigen::Vector3d &odom_delta, ros::Time stamp);
 

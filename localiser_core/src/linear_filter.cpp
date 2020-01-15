@@ -141,6 +141,11 @@ LinearFilter::update(const Eigen::VectorXd &observation,
 
   Eigen::VectorXd chi_95_percent = v.array() / (observed_variance.array().sqrt() * chisquare_val).array();
 
+  if (chi_95_percent.minCoeff() > 1.) {
+    ROS_INFO_STREAM_THROTTLE(1., "rejecting update outside chisquare test");
+    return;
+  }
+
   //print 'EKF', chi_95_percent
   ////////self.consistency_history.append(chi_95_percent);
 
