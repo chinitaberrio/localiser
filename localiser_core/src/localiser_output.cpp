@@ -14,6 +14,38 @@ LocaliserOutput::LocaliserOutput() :
 
 
 void
+LocaliserOutput::PublishStatistics(Eigen::Vector3d &innovation, Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time stamp) {
+
+  dataset_tools::LocaliserStats stats_msg;
+  stats_msg.header.stamp = stamp;
+
+  stats_msg.innovation.x = innovation(0);
+  stats_msg.innovation.y = innovation(1);
+  stats_msg.innovation.yaw = innovation(2);
+
+  stats_msg.confidence.x = confidence(0);
+  stats_msg.confidence.y = confidence(1);
+  stats_msg.confidence.yaw = confidence(2);
+
+  stats_msg.covariance[0] = covariance(0);
+  stats_msg.covariance[1] = covariance(1);
+  stats_msg.covariance[2] = covariance(2);
+  stats_msg.covariance[3] = covariance(3);
+  stats_msg.covariance[4] = covariance(4);
+  stats_msg.covariance[5] = covariance(5);
+  stats_msg.covariance[6] = covariance(6);
+  stats_msg.covariance[7] = covariance(7);
+  stats_msg.covariance[8] = covariance(8);
+
+
+  if (publish_stats) {
+    publish_stats(stats_msg, "stats");
+  }
+}
+
+
+
+void
 LocaliserOutput::PublishOdometry(Eigen::Vector3d &odometry, Eigen::Matrix3d &covariance, ros::Time stamp) {
 
   // generate an global odometry pose message
@@ -109,6 +141,8 @@ LocaliserOutput::PublishMap(Eigen::Vector3d &map_estimate, Eigen::Matrix3d &cova
       transform_listener.lookupTransform("utm", "map", ros::Time(0), transform);
       datum_x = transform.getOrigin().x();
       datum_y = transform.getOrigin().y();
+
+      // todo: output this transform: include in the new bag
     }
     catch (tf::TransformException &ex) {
       ROS_ERROR("%s",ex.what());

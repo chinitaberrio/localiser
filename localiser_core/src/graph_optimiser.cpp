@@ -20,10 +20,10 @@
 
 GraphOptimiser::GraphOptimiser() :
   LocalisationMethod(),
-  predict_countdown(1),
   previous_yaw_rate(0.),
   previous_speed(0.),
   observe_countdown(1),
+  predict_countdown(1),
   origin(NULL),
   current_index(0),
   //previous_odom_vertex_id(0),
@@ -337,7 +337,7 @@ GraphOptimiser::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3
 void
 GraphOptimiser::RunOptimiser(bool global) {
   // Align feature map to utm frame
-  auto start = std::chrono::steady_clock::now();
+//  auto start = std::chrono::steady_clock::now();
 
   g2o::HyperGraph::EdgeSet edge_set;
 
@@ -363,6 +363,6 @@ GraphOptimiser::RunOptimiser(bool global) {
     global_optimizer.optimize(3);
   }
 
-  auto end = std::chrono::steady_clock::now();
+//  auto end = std::chrono::steady_clock::now();
 }
 

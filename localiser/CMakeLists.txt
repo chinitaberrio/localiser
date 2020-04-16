@@ -80,7 +80,7 @@ generate_messages(
 )
 
 catkin_package(
-  CATKIN_DEPENDS nav_msgs sensor_msgs std_msgs sensor_msgs mrpt_bridge rosbag
+  CATKIN_DEPENDS nav_msgs sensor_msgs std_msgs sensor_msgs mrpt_bridge rosbag localiser_core
 
   INCLUDE_DIRS include
 )
@@ -196,6 +196,10 @@ install(DIRECTORY
   #launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
+
+install(DIRECTORY launch/
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+        )
 
 #############
 ## Testing ##

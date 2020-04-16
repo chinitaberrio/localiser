@@ -19,6 +19,8 @@
 
 #include "localiser/instruct_localiser.h"
 
+#include <dataset_tools/LocaliserStats.h>
+
 
 /*!
  * \brief The class that manages the localisation process
@@ -57,6 +59,8 @@ public:
 
   bool InstructionCallback(localiser::instruct_localiser::Request& req,
                            localiser::instruct_localiser::Response& res);
+
+
 
 };
 

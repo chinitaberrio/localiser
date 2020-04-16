@@ -1,8 +1,11 @@
 <launch>
   <group ns="localiser">
     <node pkg="localiser" type="localiser" name="localiser" output="screen">
-        <param name="output_bag" value="/home/stew/data/callan-park/callan-park-ekf.bag" />
+        <param name="output_bag" value="/home/stew/data/Week2_2018-03-16/2018-03-16-10-33-39_Dataset_year.ekf.bag" />
+        <param name="input_bag" value="/home/stew/data/Week2_2018-03-16/2018-03-16-10-33-39_Dataset_year.bag" />
+<!--        <param name="output_bag" value="/home/stew/data/callan-park/callan-park-ekf.bag" />
         <param name="input_bag" value="/home/stew/data/callan-park/2019-04-15-14-37-06_callan_park_loop.bag" />
+-->
     </node>
   </group>
 </launch>

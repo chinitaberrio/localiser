@@ -4,6 +4,8 @@
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/PointCloud2.h>
 
+#include <dataset_tools/LocaliserStats.h>
+
 #include <vector>
 
 
@@ -45,6 +47,10 @@ int main(int argc, char** argv) {
 
   return 0;
 }
+
+
+
+
 
 // create the localiser modules
 ROSLocaliser::ROSLocaliser() :
@@ -114,6 +120,7 @@ ROSLocaliser::Initialise() {
     localiser_output->publish_odom = std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2);
     localiser_output->publish_fix = std::bind(&Publisher::publish_fix, publisher, std::placeholders::_1, std::placeholders::_2);
     localiser_output->publish_tf = std::bind(&Publisher::publish_tf, publisher, std::placeholders::_1, std::placeholders::_2);
+    localiser_output->publish_stats = std::bind(&Publisher::publish_stats, publisher, std::placeholders::_1, std::placeholders::_2);
   }
   else {
     ROS_INFO_STREAM("[OUTPUT] Writing to bagfile " << output_bag);
@@ -122,6 +129,7 @@ ROSLocaliser::Initialise() {
     localiser_output->publish_odom = std::bind(&BagOutput::publish_odom, bag_output, std::placeholders::_1, std::placeholders::_2);
     localiser_output->publish_fix = std::bind(&BagOutput::publish_fix, bag_output, std::placeholders::_1, std::placeholders::_2);
     localiser_output->publish_tf = std::bind(&BagOutput::publish_tf, bag_output, std::placeholders::_1, std::placeholders::_2);
+    localiser_output->publish_stats = std::bind(&BagOutput::publish_stats, bag_output, std::placeholders::_1, std::placeholders::_2);
   }
 
   // localisation method
@@ -164,6 +172,7 @@ ROSLocaliser::Initialise() {
     // where to send localisation method outputs
     linear_filter->publish_odometry = std::bind(&LocaliserOutput::PublishOdometry, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     linear_filter->publish_map = std::bind(&LocaliserOutput::PublishMap, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+    linear_filter->publish_statistics = std::bind(&LocaliserOutput::PublishStatistics, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
   }
 
 
@@ -225,11 +234,11 @@ ROSLocaliser::Initialise() {
     bag_input->publish_fix_update = std::bind(&GNSSObservation::receive_message, &(*gnss), std::placeholders::_1);
     bag_input->publish_imu_update = std::bind(&ImuMeasurement::receive_message, &(*imu), std::placeholders::_1);
 
-    features_pipeline = std::make_shared<PointCloudFeaturesPipeline>();
-    icp_pipeline = std::make_shared<ICPMatcherPipeline>();
+    //features_pipeline = std::make_shared<PointCloudFeaturesPipeline>();
+    //icp_pipeline = std::make_shared<ICPMatcherPipeline>();
 
-    bag_input->publish_pointcloud_update = std::bind(&PointCloudFeaturesPipeline::receive_message, &(*features_pipeline), std::placeholders::_1);
-    features_pipeline->publish_poles_corners = std::bind(&ICPMatcherPipeline::receive_message, &(*icp_pipeline), std::placeholders::_1, std::placeholders::_2);
+    //bag_input->publish_pointcloud_update = std::bind(&PointCloudFeaturesPipeline::receive_message, &(*features_pipeline), std::placeholders::_1);
+    //features_pipeline->publish_poles_corners = std::bind(&ICPMatcherPipeline::receive_message, &(*icp_pipeline), std::placeholders::_1, std::placeholders::_2);
 
     bag_input->ReadBag(input_bag);
 

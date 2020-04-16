@@ -10,9 +10,14 @@
 #include <Eigen/Core>
 #include <Eigen/StdVector>
 
+#include <boost/math/distributions/chi_squared.hpp>
+
 
 LinearFilter::LinearFilter()
 {
+  confidence = 1.;
+  initialised_filter = false;
+
   state << 0., 0., 0.;
   state_odom_only << 0., 0., 0.;
   state_var << 0., 0., 0., 0., 0., 0., 0., 0., 0.;
@@ -91,7 +96,8 @@ LinearFilter::BoundHeading(const Eigen::Vector3d &current_state, Eigen::Vector3d
 void
 LinearFilter::update(const Eigen::VectorXd &observation,
                      const Eigen::MatrixXd &observation_noise,
-                     const Eigen::MatrixXd &observation_matrix /*,
+                     const Eigen::MatrixXd &observation_matrix,
+                     ros::Time stamp/*,
               uint64_t observation_timestamp*/) {
   /*
   Perform the update step of the EKF
@@ -133,19 +139,96 @@ LinearFilter::update(const Eigen::VectorXd &observation,
 
   Eigen::MatrixXd Pht = P * H.transpose();
 
+
+  //Eigen::Matrix3d factorised_variance = Pht.llt();
+  //Eigen::Matrix3d innovation = factorised_variance.solve(v);
+  Eigen::MatrixXd innovation = Pht.llt().matrixU().solve(v);
+
+  auto statistic = innovation.array().square().sum();
+
+  Eigen::MatrixXd tmp_mat = Pht.llt().matrixU();
+/*  std::cout << "innovation " << innovation << std::endl << std::endl <<
+        "P"  << P << std::endl << std::endl <<
+         "Pht"  << Pht << std::endl << std::endl <<
+         "Pht.llt().matrixU()" << tmp_mat <<  std::endl << std::endl <<
+         //"Pht.llt().matrixU()" << Pht.llt().matrixU() <<  std::endl << std::endl <<
+        "innovation square" << innovation.array().square() << std::endl << std::endl <<
+        "innovation sum" << innovation.array().square().sum() << std::endl << std::endl;
+  */
+  boost::math::chi_squared distribution(3);
+
+  double chi_confidence = boost::math::cdf(distribution, statistic);
+  std::cout << "statistic " << std::setprecision(8) << statistic  << ", chi_confidence " << std::setprecision(8) << chi_confidence << std::endl;
+
+
   // Get the 95% confidence interval error ellipse
   double chisquare_val = 2.4477;
 
   // mean predicted values for the observed variables
-  Eigen::MatrixXd observed_variance = (H * P * H.transpose()).diagonal();
+  Eigen::MatrixXd observed_covariance = (H * P * H.transpose());
+  Eigen::MatrixXd observed_variance = observed_covariance.diagonal().array().sqrt();
+  //Eigen::VectorXd chi_95_percent = v.array() / (observed_variance * chisquare_val).array();
+  Eigen::VectorXd chi_95 = (observed_variance * chisquare_val).array();
+  chi_95 = chi_95.cwiseAbs();
+  Eigen::VectorXd chi_95_percent = v.array() / chi_95.array();
 
-  Eigen::VectorXd chi_95_percent = v.array() / (observed_variance.array().sqrt() * chisquare_val).array();
+  if (fabs(v(0)) < 2 and fabs(v(1)) < 2) {
+    confidence = 0.95;
+  }
+  else if (fabs(v(0)) > 5 or fabs(v(1)) >5) {
+    confidence = 0.99999;
+  }
+  else if (fabs(v(0)) > 25 or fabs(v(1)) > 25) {
+    confidence = 0.999999999;
+  }
 
-  if (chi_95_percent.minCoeff() > 1.) {
-    ROS_INFO_STREAM_THROTTLE(1., "rejecting update outside chisquare test");
+  if (initialised_filter && chi_confidence > confidence) {
+    std::cout << "REJECTING SAMPLE " << std::setprecision(8) << chi_confidence << " : " << std::setprecision(8) << confidence << std::endl << " v: " << v << std::endl;
     return;
   }
 
+  initialised_filter = true;
+
+  /*init to 1.
+      if math.fabs(innovation[0]) < 2 and math.fabs(innovation[1]) < 2:
+                self.filter.filter.confidence = 0.95
+                rospy.loginfo('set confidence to 95%')
+            elif math.fabs(innovation[0]) > 5 or math.fabs(innovation[1]) > 5:
+                self.filter.filter.confidence = 0.99999
+                rospy.loginfo('set confidence to 99.999%')
+
+  */
+
+  if (publish_statistics) {
+    Eigen::Vector3d v_3d = v.array();
+    Eigen::Vector3d chi_95_3d = chi_95.array();
+    Eigen::Matrix3d covariance_3d;
+    covariance_3d << observed_covariance;
+    publish_statistics(v_3d, covariance_3d, chi_95_3d, stamp);
+  }
+
+//  std::cout << "covariance " << observed_covariance << std::endl;
+//  std::cout << "variance diag" << observed_variance << std::endl;
+//  std::cout << "innov " << v << std::endl;
+//  std::cout << "chi_95 " << chi_95 << std::endl;
+//  std::cout << "chi_95_percent " << chi_95_percent << std::endl;
+
+
+  if (chi_95_percent.minCoeff() > 1. || chi_95_percent.minCoeff() < -1.) {
+    std::cout << "CHI2 FAILED " << chi_95_percent << " : " << confidence << std::endl;
+  }
+
+
+  /*
+  //if (chi_95_percent.minCoeff() > 1. || chi_95_percent.minCoeff() < -1.) {
+//  if (observed_variance(0) < 1 && observed_variance(1) < 1) {
+    if ((chi_95_percent(0) > 1. || chi_95_percent(0) < -1.) ||
+        (chi_95_percent(1) > 1. || chi_95_percent(1) < -1.)) {
+      ROS_INFO_STREAM_THROTTLE(1., "rejecting update outside chisquare test");
+      return;
+    }
+//  }
+*/
   //print 'EKF', chi_95_percent
   ////////self.consistency_history.append(chi_95_percent);
 
@@ -246,8 +329,8 @@ PositionHeadingEKF::test_predict() {
       -0.000006415931298e+02, -0.000816583452286e+02, 0.008100000231979e+02;
 
 
-  Eigen::Vector3d expected_mean = vehicle_model(prior_mean, input_mean);
 /*
+  Eigen::Vector3d expected_mean = vehicle_model(prior_mean, input_mean);
     std::cout << "predict test" << std::endl << state << std::endl << std::endl
         << expected_mean << std::endl << std::endl
         << state_var << std::endl << std::endl
@@ -292,7 +375,7 @@ PositionHeadingEKF::test_update() {
   Eigen::Vector3d z;
   z << 4.30656587e-02, 5.81005984e-05, -1.56530542e+00;
 
-  update(z, R, H);
+  update(z, R, H, ros::Time::now());
 
   // expected output determined by running the input through matlab
   Eigen::Matrix3d expected_variance;
@@ -458,7 +541,7 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
     Eigen::MatrixXd H = Eigen::MatrixXd::Identity(3,3);
 
     //update(observation, covariance);
-    update(observation, R, H);
+    update(observation, R, H, stamp);
   }
 }
 
@@ -609,7 +692,7 @@ PositionOnlyEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix
          0., 1., 0.;
 
     //update(observation, covariance);
-    update(observation, R, H);
+    update(observation, R, H, stamp);
   }
 }
 

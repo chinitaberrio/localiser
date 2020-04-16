@@ -39,6 +39,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2
   tf2_geometry_msgs
   tf2_msgs
+  dataset_tools
 )
 
 
@@ -58,12 +59,13 @@ find_package(PCL REQUIRED)
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
+#
+### Generate added messages and services with any dependencies listed here
+#generate_messages(
+#        DEPENDENCIES
+#        std_msgs  # Or other packages containing msgs
+#)
 
-## Generate added messages and services with any dependencies listed here
-generate_messages(
-        DEPENDENCIES
-        std_msgs  # Or other packages containing msgs
-)
 
 catkin_package(
   LIBRARIES ${PROJECT_NAME}
@@ -182,6 +184,11 @@ install(DIRECTORY
   #launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
+
+
+install(DIRECTORY include/${PROJECT_NAME}/
+        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+
 
 #############
 ## Testing ##

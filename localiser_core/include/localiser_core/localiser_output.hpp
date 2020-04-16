@@ -16,6 +16,8 @@
 
 #include <tf/transform_listener.h>
 
+#include <dataset_tools/LocaliserStats.h>
+
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <geometry_msgs/TransformStamped.h>
@@ -38,10 +40,15 @@ public:
   //! Perform the prediction
   void PublishOdometry(Eigen::Vector3d &odometry, Eigen::Matrix3d &covariance, ros::Time stamp);
 
+  void PublishStatistics(Eigen::Vector3d &innovation, Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time stamp);
+
+
   // functions to bind to that will provide the ros output messages
   std::function<void(nav_msgs::Odometry&, std::string)> publish_odom;
   std::function<void(sensor_msgs::NavSatFix&, std::string)> publish_fix;
   std::function<void(tf::StampedTransform&, std::string)> publish_tf;
+  std::function<void(dataset_tools::LocaliserStats &msg, std::string topic_name)> publish_stats;
+
 
   void PublishMap(Eigen::Vector3d &map_estimate, Eigen::Matrix3d &covariance, Eigen::Vector3d &odom_delta, ros::Time stamp);
 

@@ -15,6 +15,7 @@ LocaliserInput::LocaliserInput() :
 void
 LocaliserInput::SetPitch(double pitch, double variance, ros::Time stamp) {
   measured_pitch = pitch;
+  // todo: add roll, output horizon tf to bag
 }
 
 void

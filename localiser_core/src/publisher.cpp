@@ -30,6 +30,19 @@ void Publisher::publish_fix(sensor_msgs::NavSatFix &msg, std::string topic_name)
 }
 
 
+
+void Publisher::publish_stats(dataset_tools::LocaliserStats &msg, std::string topic_name) {
+
+  if (publishers.find(topic_name) == publishers.end()) {
+    ros::NodeHandle n;
+    publishers[topic_name] = n.advertise<dataset_tools::LocaliserStats>(topic_name, 100);
+  }
+
+  publishers[topic_name].publish(msg);
+}
+
+
+
 void
 Publisher::publish_tf(tf::StampedTransform &msg, std::string topic_name) {
 

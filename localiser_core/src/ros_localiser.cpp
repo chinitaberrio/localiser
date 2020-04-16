@@ -214,8 +214,8 @@ ROSLocaliser::Initialise() {
     bag_input->publish_fix_update = std::bind(&GNSSObservation::receive_message, &(*gnss), std::placeholders::_1);
     bag_input->publish_imu_update = std::bind(&ImuMeasurement::receive_message, &(*imu), std::placeholders::_1);
 
-    features_pipeline = std::make_shared<PointCloudFeaturesPipeline>();
-    icp_pipeline = std::make_shared<ICPMatcherPipeline>();
+    //features_pipeline = std::make_shared<PointCloudFeaturesPipeline>();
+    //icp_pipeline = std::make_shared<ICPMatcherPipeline>();
 
     //bag_input->publish_pointcloud_update = std::bind(&PointCloudFeaturesPipeline::receive_message, &(*features_pipeline), std::placeholders::_1);
     //features_pipeline->publish_poles_corners = std::bind(&ICPMatcherPipeline::receive_message, &(*icp_pipeline), std::placeholders::_1, std::placeholders::_2);

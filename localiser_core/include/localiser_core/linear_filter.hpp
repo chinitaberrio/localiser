@@ -97,9 +97,9 @@ public:
 
   // use hard coded uncertainty values from python code
   float VELOCITY_NOISE = 2.5; // m/s
-  float YAWRATE_NOISE = 1.5; // deg/s
-  float HEADING_ERROR = 2.;// deg
-  float POSITION_ERROR = 1.5; // m
+  float YAWRATE_NOISE = 1.5 * (3.1415 / 180.0); // deg/s
+  float HEADING_ERROR = 2. * (3.1415 / 180.0);// deg
+  float POSITION_ERROR = 2.5; // m
 
   Eigen::Vector3d state_odom_only;
 
@@ -110,6 +110,9 @@ public:
   Eigen::Matrix2d prior_motion_covariance;
   ros::Time prior_stamp;
 
+  bool initialised_filter;
+  double confidence;
+
   //! Perform the optimisation
   void AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covariance, ros::Time stamp);
   virtual void AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp) {}
@@ -118,17 +121,18 @@ public:
 
 
   // Functions to implement for the specific problem being applied to the filter
-  virtual Eigen::Vector3d vehicle_model(const Eigen::Vector3d &mean, const Eigen::Vector2d &input_state) {}
-  virtual Eigen::VectorXd observation_model(const Eigen::VectorXd state, const Eigen::VectorXd observation) {}
-  virtual Eigen::Matrix3d transition_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state) {}
-  virtual Eigen::MatrixXd jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state) {}
+  virtual Eigen::Vector3d vehicle_model(const Eigen::Vector3d &mean, const Eigen::Vector2d &input_state) {return Eigen::Vector3d();}
+  virtual Eigen::VectorXd observation_model(const Eigen::VectorXd state, const Eigen::VectorXd observation) {return Eigen::VectorXd();}
+  virtual Eigen::Matrix3d transition_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state) {return Eigen::Matrix3d();}
+  virtual Eigen::MatrixXd jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state) {return Eigen::MatrixXd();}
 
 
 protected:
 
   void update(const Eigen::VectorXd &observation,
               const Eigen::MatrixXd &observation_noise,
-              const Eigen::MatrixXd &observation_matrix/*,
+              const Eigen::MatrixXd &observation_matrix,
+              ros::Time stamp/*,
               uint64_t observation_timestamp*/);
 
   void predict(const Eigen::VectorXd input_state, const Eigen::MatrixXd input_state_variance);
