@@ -86,6 +86,78 @@ using namespace std;
 
 // TODO: observe speed also ? estimate noise ?
 
+
+class StateEstimate {
+
+public:
+  Eigen::Vector3d mean;
+  Eigen::Matrix3d covariance;
+
+};
+
+
+class ConditionedState {
+public:
+
+  ConditionedState() : valid_flag(false) {}
+
+
+  virtual void condition() = 0;
+
+  StateEstimate posterior;
+
+  ros::Time stamp;
+  bool valid_flag;
+
+};
+
+
+class Observation{
+
+public:
+
+  Observation() {
+    //observation_matrix << 1., 0., 0.,
+    //                      0., 1., 0.;
+  }
+
+  Eigen::Vector3d mean;     // z
+  Eigen::MatrixXd noise;    // R
+
+  Eigen::MatrixXd observation_matrix;   // H
+
+};
+
+class RelativeMotion : public ConditionedState{
+
+public:
+
+  RelativeMotion() {}
+
+  Eigen::Vector2d mean;
+  Eigen::Matrix2d noise;    // Q
+};
+
+
+class UpdateStep: public ConditionedState {
+
+public:
+  Observation observation;
+
+  void condition();
+};
+
+
+class PredictStep: public ConditionedState {
+
+public:
+  RelativeMotion motion;
+
+  void condition();
+};
+
+
+
 class LinearFilter : public LocalisationMethod {
 public:
 
@@ -103,12 +175,22 @@ public:
 
   Eigen::Vector3d state_odom_only;
 
-  Eigen::Vector3d state;
-  Eigen::Matrix3d state_var;
+//  std::vector<std::unique_ptr<sf::Shape>>
+//  std::deque<Observation> update_steps;
+//  std::deque<RelativeMotion> prediction_steps;
 
-  Eigen::Vector2d prior_motion;
-  Eigen::Matrix2d prior_motion_covariance;
-  ros::Time prior_stamp;
+  std::deque<std::shared_ptr<ConditionedState>> states;
+
+//  Eigen::Vector3d state;
+//  Eigen::Matrix3d state_var;
+
+//  Eigen::Vector2d prior_motion;
+//  Eigen::Matrix2d prior_motion_covariance;
+  //ros::Time prior_stamp;
+
+  //RelativeMotion prior_motion;
+
+  float previous_speed = 0.;
 
   bool initialised_filter;
   double confidence;
@@ -128,16 +210,26 @@ public:
 
 
 protected:
+/*
+  bool update(StateEstimate &prior,
+              Observation &observation,
+              StateEstimate &posterior);
 
-  void update(const Eigen::VectorXd &observation,
-              const Eigen::MatrixXd &observation_noise,
-              const Eigen::MatrixXd &observation_matrix,
-              ros::Time stamp/*,
-              uint64_t observation_timestamp*/);
-
-  void predict(const Eigen::VectorXd input_state, const Eigen::MatrixXd input_state_variance);
+              //const Eigen::VectorXd &observation,
+              //const Eigen::MatrixXd &observation_noise,
+              //  const Eigen::MatrixXd &observation_matrix,
+              //ros::Time stamp
+              //
 
 
+  void predict(StateEstimate &prior,
+               RelativeMotion &motion,
+               StateEstimate &posterior);
+*/
+
+//  void predict(const Eigen::VectorXd input_state, const Eigen::MatrixXd input_state_variance);
+  //Eigen::VectorXd input_state,
+  //Eigen::MatrixXd input_state_variance,
 
 
 };

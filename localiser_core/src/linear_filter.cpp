@@ -18,9 +18,9 @@ LinearFilter::LinearFilter()
   confidence = 1.;
   initialised_filter = false;
 
-  state << 0., 0., 0.;
+//  state << 0., 0., 0.;
   state_odom_only << 0., 0., 0.;
-  state_var << 0., 0., 0., 0., 0., 0., 0., 0., 0.;
+//  state_var << 0., 0., 0., 0., 0., 0., 0., 0., 0.;
 
 }
 
@@ -28,55 +28,6 @@ LinearFilter::~LinearFilter() {
 
 }
 
-
-
-//! Perform the optimisation
-void
-LinearFilter::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covariance, ros::Time stamp) {
-
-  float delta_time = 0.01; //(stamp - prior_stamp).toSec();
-
-  Eigen::Vector2d delta_state_change = motion * delta_time;
-  state_odom_only = vehicle_model(state_odom_only, delta_state_change);
-
-  if (publish_odometry) {
-    Eigen::Matrix3d odom_uncertainty;
-
-    odom_uncertainty << 0., 0., 0.,
-        0., 0., 0.,
-        0., 0., 0.;
-
-    publish_odometry(state_odom_only, odom_uncertainty, stamp);
-  }
-
-  if (initialised) {
-
-    Eigen::Matrix2d Q; //process noise
-    Q << VELOCITY_NOISE, 0.,
-        0., YAWRATE_NOISE;
-
-    Q *= delta_time;
-    Q = Q.array().square();
-
-    predict(delta_state_change, Q);
-
-    /*
-       force the odom filter to use the absolute heading estimate - the odom source should be continuous
-       in position but not in heading - the drifting of the baselink in the odom frame can only be
-       in position. if there was an angular offset between the map->odom, this rotation
-       could only be applied to the base_link directly
-    */
-
-    state_odom_only[2] = state[2];
-
-    if (publish_map)
-      publish_map(state, state_var, state_odom_only, stamp);
-  }
-
-  prior_motion = motion;
-  prior_motion_covariance = covariance;
-  prior_stamp = stamp;
-}
 
 
 
@@ -93,12 +44,18 @@ LinearFilter::BoundHeading(const Eigen::Vector3d &current_state, Eigen::Vector3d
 
 
 
-void
-LinearFilter::update(const Eigen::VectorXd &observation,
-                     const Eigen::MatrixXd &observation_noise,
-                     const Eigen::MatrixXd &observation_matrix,
-                     ros::Time stamp/*,
-              uint64_t observation_timestamp*/) {
+bool
+LinearFilter::update(StateEstimate &prior,
+                     Observation &observation,
+                     StateEstimate &posterior) {
+
+/*LinearFilterAbsoluteSample &prior,
+                 const Eigen::VectorXd &observation,
+                 const Eigen::MatrixXd &observation_noise,
+                 LinearFilterAbsoluteSample &posterior,
+                 const Eigen::MatrixXd &observation_matrix,
+                 ros::Time stamp*//*,
+              uint64_t observation_timestamp*///) {
   /*
   Perform the update step of the EKF
   Conditions the state on observed values.
@@ -108,18 +65,18 @@ LinearFilter::update(const Eigen::VectorXd &observation,
   */
 
   //observation_matrix - fixed for a specific problem;
-  Eigen::MatrixXd H = observation_matrix;   //Eigen::MatrixXd::Identity(3,3);
+  Eigen::MatrixXd H = observation.observation_matrix;   //Eigen::MatrixXd::Identity(3,3);
 
-  Eigen::MatrixXd P = state_var;
-  Eigen::MatrixXd R = observation_noise;
+  Eigen::MatrixXd P = prior.covariance;
+  Eigen::MatrixXd R = observation.noise;
 
   // make the observations into column matricies
   // our observation model is simply the observation vector as we observe directly the values
-  Eigen::VectorXd z = observation;
+  Eigen::VectorXd z = observation.mean;
 
-  Eigen::VectorXd zpred = H * state;
+  Eigen::VectorXd zpred = H * prior.mean;
 
-  Eigen::VectorXd x = state;
+  Eigen::VectorXd x = prior.mean;
 
   // make x a column vector
   x = x.transpose();
@@ -127,6 +84,7 @@ LinearFilter::update(const Eigen::VectorXd &observation,
   // v is the innovation
   Eigen::VectorXd v = z - zpred;
 
+  //std::cout << "x, P, H " << x << std::endl << std::endl << P << std::endl << std::endl << H << std::endl << std::endl;
   //std::cout << "z, zpred, v " << z << std::endl << std::endl << zpred << std::endl << std::endl << v << std::endl << std::endl;
 
   // Calculate the KF (or EKF) update given the prior state [x,P], the
@@ -184,7 +142,7 @@ LinearFilter::update(const Eigen::VectorXd &observation,
 
   if (initialised_filter && chi_confidence > confidence) {
     std::cout << "REJECTING SAMPLE " << std::setprecision(8) << chi_confidence << " : " << std::setprecision(8) << confidence << std::endl << " v: " << v << std::endl;
-    return;
+    //return false;
   }
 
   initialised_filter = true;
@@ -204,7 +162,7 @@ LinearFilter::update(const Eigen::VectorXd &observation,
     Eigen::Vector3d chi_95_3d = chi_95.array();
     Eigen::Matrix3d covariance_3d;
     covariance_3d << observed_covariance;
-    publish_statistics(v_3d, covariance_3d, chi_95_3d, stamp);
+//todo ///////    publish_statistics(v_3d, covariance_3d, chi_95_3d, observation.stamp);
   }
 
 //  std::cout << "covariance " << observed_covariance << std::endl;
@@ -260,33 +218,45 @@ LinearFilter::update(const Eigen::VectorXd &observation,
 
   // Update the current state and covariance
   // x = x + W*v
-  state = x + W * v;
+  posterior.mean = x + W * v;
 
   // P = P - Wc*Wc'
-  state_var = P - Wc * Wc.transpose();
+  posterior.covariance = P - Wc * Wc.transpose();
+
+  //std::cout << "W, R, posterior " << W << std::endl << std::endl << R << std::endl << std::endl<< posterior.mean << std::endl << std::endl << posterior.covariance << std::endl << std::endl;
+
+  return true;
 }
 
 
 void
-LinearFilter::predict(Eigen::VectorXd input_state, Eigen::MatrixXd input_state_variance) {
+LinearFilter::predict(StateEstimate &prior,
+                      RelativeMotion &motion,
+                      StateEstimate &posterior) {
+
+
+    /*LinearFilterAbsoluteSample &prior,
+                      Eigen::VectorXd input_state,
+                      Eigen::MatrixXd input_state_variance,
+                      LinearFilterAbsoluteSample &posterior) {*/
 
   //    Perform the prediction step of the EKF
   //    Update the mean and covariance, append the results to the state_history
 
   // apply transition model to predict current mean
-  state = vehicle_model(state, input_state);
+  posterior.mean = vehicle_model(prior.mean, motion.mean);
 
   // determine the transition matrix function
-  Eigen::MatrixXd F = transition_matrix_fn(state, input_state);
-  Eigen::MatrixXd G = jacobian_matrix_fn(state, input_state);
+  Eigen::MatrixXd F = transition_matrix_fn(posterior.mean, motion.mean);
+  Eigen::MatrixXd G = jacobian_matrix_fn(posterior.mean, motion.mean);
 
-  Eigen::MatrixXd P = state_var;
-  Eigen::MatrixXd Q = input_state_variance;
+  Eigen::MatrixXd P = prior.covariance;
+  Eigen::MatrixXd Q = motion.noise;
 
   // TODO: work out when there is no input?
   // Update the covariances depending on whether there is an input or not
   // if (min(G.shape) > 0)
-  state_var = F * P * F.transpose() + G * Q * G.transpose();
+  posterior.covariance = F * P * F.transpose() + G * Q * G.transpose();
   // else
   //   var = F * P * F.transpose();
 }
@@ -299,28 +269,31 @@ PositionHeadingEKF::test_predict() {
 
   // output generated by matlab to validate the calculations
 
-  Eigen::Vector2d input_mean;
-  input_mean << 0.13142498, 0.0052047;
+  StateEstimate prior, posterior;
+  RelativeMotion motion;
+
+  //Eigen::Vector2d input_mean;
+  motion.mean << 0.13142498, 0.0052047;
 
   Eigen::Matrix2d input_variance;
-  input_variance << 1.60000000e-03, 0.00000000e+00,
+  motion.noise << 1.60000000e-03, 0.00000000e+00,
       0.00000000e+00, 9.27917724e-08;
 
-  Eigen::Vector3d prior_mean;
-  prior_mean << 0., 0., 0.;
+  //Eigen::Vector3d prior_mean;
+  prior.mean << 0., 0., 0.;
 
-  Eigen::Matrix3d prior_variance;
-  prior_variance << 100., 0., 0.,
+  //Eigen::Matrix3d prior_variance;
+  prior.covariance << 100., 0., 0.,
       0., 100., 0.,
       0., 0., 0.81;
 
-  state = prior_mean;
-  state_var = prior_variance;
+  //state = prior_mean;
+  //state_var = prior_variance;
 
   // fill the state history with the initial guess
   //ukf.init(StateEstimate(prior_mean, prior_variance))
 
-  predict(input_mean, input_variance);
+  predict(prior, motion, posterior);
 
   // expected output determined by running the input through matlab
   Eigen::Matrix3d expected_variance;
@@ -352,30 +325,33 @@ PositionHeadingEKF::test_update() {
   /* Test UKF() update. */
   // output generated by matlab to validate the calculations
 
-  Eigen::Vector3d prior_mean;
-  prior_mean << 0.04301946, -0.00011447, 0.00532197;
+  StateEstimate prior, posterior;
 
+  prior.mean << 0.04301946, -0.00011447, 0.00532197;
 
-  Eigen::Matrix3d prior_variance;
-  prior_variance << 1.00001600e+02, -8.05790926e-07, -2.78170313e-04,
+  prior.covariance << 1.00001600e+02, -8.05790926e-07, -2.78170313e-04,
       -8.05790926e-07, 1.00001499e+02, -3.48447798e-02,
       -2.78170313e-04, -3.48447798e-02, 8.10000023e-01;
 
-  state = prior_mean;
-  state_var = prior_variance;
+//  state = prior_mean;
+//  state_var = prior_variance;
+
+  Observation observation;
+
+  observation.observation_matrix = Eigen::MatrixXd::Identity(3,3);
 
 
-  Eigen::Matrix3d H = Eigen::MatrixXd::Identity(3,3);
-
-  Eigen::Matrix3d R;
-  R  << 1.00000000e-06, 0.00000000e+00, 0.00000000e+00,
+  //Eigen::Matrix3d R;
+  observation.noise  << 1.00000000e-06, 0.00000000e+00, 0.00000000e+00,
       0.00000000e+00, 1.00000000e-06, 0.00000000e+00,
       0.00000000e+00, 0.00000000e+00, 9.27917724e-06;
 
-  Eigen::Vector3d z;
-  z << 4.30656587e-02, 5.81005984e-05, -1.56530542e+00;
+  //Eigen::Vector3d z;
+  observation.mean << 4.30656587e-02, 5.81005984e-05, -1.56530542e+00;
 
-  update(z, R, H, ros::Time::now());
+  //observation.stamp = ros::Time::now();
+
+  update(prior, observation, posterior);
 
   // expected output determined by running the input through matlab
   Eigen::Matrix3d expected_variance;
@@ -386,11 +362,11 @@ PositionHeadingEKF::test_update() {
   Eigen::Vector3d expected_mean;
   expected_mean << 0.043065658704932, 0.000058101272323, -1.565287427184605;
 
-
-  std::cout << "update test" << std::endl << state << std::endl << std::endl
+  std::cout << "update test" << std::endl
             << expected_mean << std::endl << std::endl
-            << state_var << std::endl << std::endl
-            << expected_variance << std::endl << std::endl;
+            << posterior.mean << std::endl << std::endl
+            << expected_variance << std::endl << std::endl
+            << posterior.covariance << std::endl << std::endl;
 
   // compare the expected output variance (from matlab) with the calculated variance from the filter
   //self.assertTrue(numpy.allclose(expected_variance, ukf.state_history[-1].var))
@@ -515,11 +491,20 @@ void
 PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp) {
 
   if (!initialised) {
-    if (prior_motion[0] > MINIMUM_INITIALISATION_SPEED) {
-      state = observation;
-      state_var = covariance;
-      initialised = true;
-      prior_stamp = stamp;
+    if (previous_speed > MINIMUM_INITIALISATION_SPEED) {
+
+
+      std::shared_ptr<UpdateStep> update_step = std::make_shared<UpdateStep>();
+      states.push_back(update_step);
+
+      update_step->posterior.mean = observation;
+      update_step->posterior.covariance = covariance;
+
+      update_step->observation.mean = observation;
+      update_step->observation.noise = covariance;
+
+      update_step->valid_flag = true;
+      update_step->stamp = stamp;
     }
   }
   else {
@@ -527,21 +512,42 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
     //float delta_time = (stamp - prior_stamp).toSec();
     //predict(motion * delta_time, covariance);
 
-    BoundHeading(state, observation);
+    StateEstimate &prior = states.back()->posterior;
+    BoundHeading(prior.mean, observation);
+
+    // The observations are generally older than the latest relative motion estimate
+    //float delta_time = (stamp - prior_stamp).toSec();
+    //predict(motion * delta_time, covariance);
+
+
+    std::shared_ptr<UpdateStep> update_step = std::make_shared<UpdateStep>();
+
+    update_step->observation.mean = observation;
+    update_step->observation.noise = covariance;
+
+    //obs->prior = states.back().posterior;
+    BoundHeading(prior.mean, update_step->observation.mean);
+
+    update_step->valid_flag = true;
+    update_step->stamp = stamp;
 
     // Override covariance with fixed values
-    Eigen::Matrix3d R; // observation noise
+    //Eigen::Matrix2d R; // observation noise
 
-    R << POSITION_ERROR, 0., 0.,
+    // calculate noise R
+    update_step->observation.noise << POSITION_ERROR, 0., 0.,
         0., POSITION_ERROR, 0.,
         0., 0., HEADING_ERROR;
 
-    R = R.array().square();
+    update_step->observation.noise = update_step->observation.noise.array().square();
 
-    Eigen::MatrixXd H = Eigen::MatrixXd::Identity(3,3);
+    update_step->observation.observation_matrix = Eigen::MatrixXd::Identity(3,3);
+     //   Eigen::MatrixXd H = Eigen::MatrixXd::Identity(3,3);
 
-    //update(observation, covariance);
-    update(observation, R, H, stamp);
+    if (update(prior, update_step->observation, update_step->posterior)) {
+      states.push_back(update_step);
+    }
+
   }
 }
 
@@ -663,36 +669,125 @@ PositionOnlyEKF::jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_
 
 void
 PositionOnlyEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp) {
-
+  ROS_INFO_STREAM("new absolute position " << observation[0] << ", " << observation[1]);
   if (!initialised) {
-    if (prior_motion[0] > MINIMUM_INITIALISATION_SPEED) {
-      state = observation;
-      state_var = covariance;
+    if (previous_speed > MINIMUM_INITIALISATION_SPEED) {
+
+      // Add directly, this is the initialisation of the filter, so it is definitely considered valid
+      std::shared_ptr<UpdateStep> update_step = std::make_shared<UpdateStep>();
+      states.push_back(update_step);
+
+      update_step->posterior.mean = observation;
+      update_step->posterior.covariance = covariance;
+
+      update_step->observation.mean = observation;
+      update_step->observation.noise = covariance;
+
+      update_step->valid_flag = true;
+      update_step->stamp = stamp;
+
       initialised = true;
-      prior_stamp = stamp;
     }
   }
   else {
     // The observations are generally older than the latest relative motion estimate
     //float delta_time = (stamp - prior_stamp).toSec();
     //predict(motion * delta_time, covariance);
+    StateEstimate &prior = states.back()->posterior;
+    std::shared_ptr<UpdateStep> update_step = std::make_shared<UpdateStep>();
+    update_step->observation.mean = observation;
+    update_step->observation.noise = covariance;
 
-    BoundHeading(state, observation);
+    //obs->prior = states.back().posterior;
+    BoundHeading(prior.mean, update_step->observation.mean);
+
+    update_step->valid_flag = true;
+    update_step->stamp = stamp;
 
     // Override covariance with fixed values
     Eigen::Matrix2d R; // observation noise
 
+    // calculate noise R
     R << POSITION_ERROR, 0.,
         0., POSITION_ERROR;
 
     R = R.array().square();
 
-    Eigen::MatrixXd H = Eigen::MatrixXd(2,3);
-    H << 1., 0., 0.,
+    update_step->observation.noise = R;
+
+//    Eigen::MatrixXd H = Eigen::MatrixXd(2,3);
+    update_step->observation.observation_matrix = Eigen::MatrixXd(2,3);
+    update_step->observation.observation_matrix << 1., 0., 0.,
          0., 1., 0.;
 
-    //update(observation, covariance);
-    update(observation, R, H, stamp);
+    if (update(prior, update_step->observation, update_step->posterior)) {
+      states.push_back(update_step);
+    }
   }
 }
 
+
+
+
+//! Perform the optimisation
+void
+LinearFilter::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covariance, ros::Time stamp) {
+
+  float delta_time = 0.01; //(stamp - prior_stamp).toSec();
+
+  Eigen::Vector2d delta_state_change = motion * delta_time;
+  state_odom_only = vehicle_model(state_odom_only, delta_state_change);
+
+  if (publish_odometry) {
+    Eigen::Matrix3d odom_uncertainty;
+
+    odom_uncertainty << 0., 0., 0.,
+        0., 0., 0.,
+        0., 0., 0.;
+
+    publish_odometry(state_odom_only, odom_uncertainty, stamp);
+  }
+
+  if (initialised) {
+
+    StateEstimate &prior = states.back()->posterior;
+
+    std::shared_ptr<PredictStep> predict_step = std::make_shared<PredictStep>();
+    states.push_back(predict_step);
+
+    predict_step->stamp = stamp;
+    predict_step->valid_flag = true;
+
+    predict_step->motion.mean = motion * delta_time;
+
+    //Eigen::Matrix2d Q; //process noise
+    predict_step->motion.noise << VELOCITY_NOISE, 0.,
+        0., YAWRATE_NOISE;
+
+    predict_step->motion.noise *= delta_time;
+    predict_step->motion.noise = predict_step->motion.noise.array().square();
+
+    //predict(delta_state_change, Q);
+    predict(prior, predict_step->motion, predict_step->posterior);
+
+    //ROS_INFO_STREAM("predict " << predict_step->posterior.mean);
+
+    /*
+       force the odom filter to use the absolute heading estimate - the odom source should be continuous
+       in position but not in heading - the drifting of the baselink in the odom frame can only be
+       in position. if there was an angular offset between the map->odom, this rotation
+       could only be applied to the base_link directly
+    */
+
+    state_odom_only[2] = predict_step->posterior.mean[2];
+
+    if (publish_map)
+      publish_map(predict_step->posterior.mean, predict_step->posterior.covariance, state_odom_only, stamp);
+  }
+
+  //prior_motion.mean = motion;
+  //prior_motion_covariance = covariance;
+  //prior_motionprior_stamp = stamp;
+
+  previous_speed = motion[0];
+}
