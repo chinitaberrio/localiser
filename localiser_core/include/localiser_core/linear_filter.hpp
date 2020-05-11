@@ -102,7 +102,7 @@ public:
   ConditionedState() : valid_flag(false) {}
 
 
-  virtual void condition() = 0;
+  virtual bool condition(StateEstimate &prior) = 0;
 
   StateEstimate posterior;
 
@@ -128,7 +128,7 @@ public:
 
 };
 
-class RelativeMotion : public ConditionedState{
+class RelativeMotion{
 
 public:
 
@@ -144,7 +144,10 @@ class UpdateStep: public ConditionedState {
 public:
   Observation observation;
 
-  void condition();
+  bool condition(StateEstimate &prior);
+
+
+  std::shared_ptr<UpdateStep> prev, next;
 };
 
 
@@ -153,7 +156,16 @@ class PredictStep: public ConditionedState {
 public:
   RelativeMotion motion;
 
-  void condition();
+  bool condition(StateEstimate &prior);
+
+  std::function<Eigen::Vector3d(const Eigen::Vector3d &, const Eigen::Vector2d &)> motion_model;
+  std::function<Eigen::Matrix3d(Eigen::Vector3d, Eigen::Vector2d)> transition_matrix_fn;
+  std::function<Eigen::MatrixXd(Eigen::Vector3d, Eigen::Vector2d)> jacobian_matrix_fn;
+
+  //Eigen::Vector3d motion_model(const Eigen::Vector3d &mean, const Eigen::Vector2d &input_state) {return Eigen::Vector3d();}
+
+
+  std::shared_ptr<PredictStep> prev, next;
 };
 
 
@@ -231,6 +243,9 @@ protected:
   //Eigen::VectorXd input_state,
   //Eigen::MatrixXd input_state_variance,
 
+
+  std::shared_ptr<UpdateStep> last_update;
+  std::shared_ptr<PredictStep> last_predict;
 
 };
 

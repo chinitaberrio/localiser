@@ -45,9 +45,12 @@ LinearFilter::BoundHeading(const Eigen::Vector3d &current_state, Eigen::Vector3d
 
 
 bool
-LinearFilter::update(StateEstimate &prior,
+UpdateStep::condition(StateEstimate &prior/*,
                      Observation &observation,
-                     StateEstimate &posterior) {
+                     StateEstimate &posterior*/) {
+
+  // todo: need to find where this goes
+  double confidence = 1.;
 
 /*LinearFilterAbsoluteSample &prior,
                  const Eigen::VectorXd &observation,
@@ -140,12 +143,12 @@ LinearFilter::update(StateEstimate &prior,
     confidence = 0.999999999;
   }
 
-  if (initialised_filter && chi_confidence > confidence) {
+  if (/*initialised_filter && */chi_confidence > confidence) {
     std::cout << "REJECTING SAMPLE " << std::setprecision(8) << chi_confidence << " : " << std::setprecision(8) << confidence << std::endl << " v: " << v << std::endl;
     //return false;
   }
 
-  initialised_filter = true;
+//  initialised_filter = true;
 
   /*init to 1.
       if math.fabs(innovation[0]) < 2 and math.fabs(innovation[1]) < 2:
@@ -156,7 +159,7 @@ LinearFilter::update(StateEstimate &prior,
                 rospy.loginfo('set confidence to 99.999%')
 
   */
-
+/* todo: publish the stats
   if (publish_statistics) {
     Eigen::Vector3d v_3d = v.array();
     Eigen::Vector3d chi_95_3d = chi_95.array();
@@ -164,7 +167,7 @@ LinearFilter::update(StateEstimate &prior,
     covariance_3d << observed_covariance;
 //todo ///////    publish_statistics(v_3d, covariance_3d, chi_95_3d, observation.stamp);
   }
-
+*/
 //  std::cout << "covariance " << observed_covariance << std::endl;
 //  std::cout << "variance diag" << observed_variance << std::endl;
 //  std::cout << "innov " << v << std::endl;
@@ -229,10 +232,10 @@ LinearFilter::update(StateEstimate &prior,
 }
 
 
-void
-LinearFilter::predict(StateEstimate &prior,
+bool
+PredictStep::condition(StateEstimate &prior/*,
                       RelativeMotion &motion,
-                      StateEstimate &posterior) {
+                      StateEstimate &posterior*/) {
 
 
     /*LinearFilterAbsoluteSample &prior,
@@ -244,7 +247,7 @@ LinearFilter::predict(StateEstimate &prior,
   //    Update the mean and covariance, append the results to the state_history
 
   // apply transition model to predict current mean
-  posterior.mean = vehicle_model(prior.mean, motion.mean);
+  posterior.mean = motion_model(prior.mean, motion.mean);
 
   // determine the transition matrix function
   Eigen::MatrixXd F = transition_matrix_fn(posterior.mean, motion.mean);
@@ -259,6 +262,9 @@ LinearFilter::predict(StateEstimate &prior,
   posterior.covariance = F * P * F.transpose() + G * Q * G.transpose();
   // else
   //   var = F * P * F.transpose();
+
+  // todo: are there any conditions where the predict should fail ?
+  return true;
 }
 
 
@@ -293,7 +299,7 @@ PositionHeadingEKF::test_predict() {
   // fill the state history with the initial guess
   //ukf.init(StateEstimate(prior_mean, prior_variance))
 
-  predict(prior, motion, posterior);
+  //////predict(prior, motion, posterior);
 
   // expected output determined by running the input through matlab
   Eigen::Matrix3d expected_variance;
@@ -351,7 +357,7 @@ PositionHeadingEKF::test_update() {
 
   //observation.stamp = ros::Time::now();
 
-  update(prior, observation, posterior);
+  /////update(prior, observation, posterior);
 
   // expected output determined by running the input through matlab
   Eigen::Matrix3d expected_variance;
@@ -544,7 +550,7 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
     update_step->observation.observation_matrix = Eigen::MatrixXd::Identity(3,3);
      //   Eigen::MatrixXd H = Eigen::MatrixXd::Identity(3,3);
 
-    if (update(prior, update_step->observation, update_step->posterior)) {
+    if (update_step->condition(prior)) {
       states.push_back(update_step);
     }
 
@@ -720,7 +726,17 @@ PositionOnlyEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix
     update_step->observation.observation_matrix << 1., 0., 0.,
          0., 1., 0.;
 
-    if (update(prior, update_step->observation, update_step->posterior)) {
+
+    // generate a linked list of predict steps
+    if (last_update) {
+      last_update->next = update_step;
+      update_step->prev = last_update;
+    }
+
+    last_update = update_step;
+
+
+    if (update_step->condition(prior)) {
       states.push_back(update_step);
     }
   }
@@ -753,6 +769,12 @@ LinearFilter::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covari
     StateEstimate &prior = states.back()->posterior;
 
     std::shared_ptr<PredictStep> predict_step = std::make_shared<PredictStep>();
+
+    using std::placeholders::_1;
+    using std::placeholders::_2;
+    predict_step->motion_model = std::bind(&LinearFilter::vehicle_model, this, _1, _2);
+    predict_step->transition_matrix_fn = std::bind(&LinearFilter::transition_matrix_fn, this, _1, _2);
+    predict_step->jacobian_matrix_fn = std::bind(&LinearFilter::jacobian_matrix_fn, this, _1, _2);
     states.push_back(predict_step);
 
     predict_step->stamp = stamp;
@@ -767,8 +789,18 @@ LinearFilter::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covari
     predict_step->motion.noise *= delta_time;
     predict_step->motion.noise = predict_step->motion.noise.array().square();
 
-    //predict(delta_state_change, Q);
-    predict(prior, predict_step->motion, predict_step->posterior);
+    // generate a linked list of predict steps
+    if (last_predict) {
+      last_predict->next = predict_step;
+      predict_step->prev = last_predict;
+    }
+
+    last_predict = predict_step;
+
+
+
+        //predict(delta_state_change, Q);
+    predict_step->condition(prior);
 
     //ROS_INFO_STREAM("predict " << predict_step->posterior.mean);
 
@@ -789,5 +821,7 @@ LinearFilter::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covari
   //prior_motion_covariance = covariance;
   //prior_motionprior_stamp = stamp;
 
+  // todo: replace this with the last predict step motion
   previous_speed = motion[0];
 }
+
