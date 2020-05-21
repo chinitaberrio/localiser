@@ -99,7 +99,7 @@ public:
 class ConditionedState {
 public:
 
-  ConditionedState() : valid_flag(false) {}
+  ConditionedState() : valid_individual(true), valid_sequence(true) {}
 
 
   virtual bool condition(StateEstimate &prior) = 0;
@@ -107,7 +107,10 @@ public:
   StateEstimate posterior;
 
   ros::Time stamp;
-  bool valid_flag;
+  bool valid_individual;
+  bool valid_sequence;
+
+
 
 };
 
@@ -145,6 +148,15 @@ public:
   Observation observation;
 
   bool condition(StateEstimate &prior);
+
+
+  bool CalculateConsensus(float consensus_window, std::deque<std::shared_ptr<ConditionedState>> &states);
+
+  float speed_discrepancy;
+
+  Eigen::Vector3d v_3d;
+  Eigen::Vector3d chi_95_3d;
+  Eigen::Matrix3d covariance_3d;
 
 
   std::shared_ptr<UpdateStep> prev, next;

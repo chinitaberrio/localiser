@@ -125,6 +125,7 @@ ROSLocaliser::Initialise() {
   // localisation method
   // run using gtsam or graph optimizer
   if (0) {
+    /*
     // bind localisation method inputs
     gtsam_optimiser = std::make_shared<GtsamOptimiser>();
     localiser_input->perform_update = std::bind(&GtsamOptimiser::AddAbsolutePosition, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
@@ -132,7 +133,7 @@ ROSLocaliser::Initialise() {
 
     // where to send localisation method outputs
     gtsam_optimiser->publish_odometry = std::bind(&LocaliserOutput::PublishOdometry, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-
+    */
   }
   else if(0){
     // bind localisation method inputs

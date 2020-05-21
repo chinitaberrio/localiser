@@ -4,7 +4,7 @@
 #include <ros/ros.h>
 
 #include "graph_optimiser.hpp"
-#include "gtsam_optimiser.hpp"
+//#include "gtsam_optimiser.hpp"
 #include "linear_filter.hpp"
 
 #include "dataset_tools/bag_input.hpp"
@@ -49,7 +49,7 @@ public:
   std::shared_ptr<GNSSObservation> gnss;
 
   std::shared_ptr<GraphOptimiser> graph_optimiser;
-  std::shared_ptr<GtsamOptimiser> gtsam_optimiser;
+//  std::shared_ptr<GtsamOptimiser> gtsam_optimiser;
   std::shared_ptr<PositionOnlyEKF> linear_filter;
 
   ros::ServiceServer service;

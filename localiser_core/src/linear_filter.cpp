@@ -1,5 +1,8 @@
 ﻿#include "linear_filter.hpp"
 
+
+#include <algorithm>
+
 #include <ostream>
 #include <sstream>
 #include <iostream>
@@ -48,7 +51,11 @@ bool
 UpdateStep::condition(StateEstimate &prior/*,
                      Observation &observation,
                      StateEstimate &posterior*/) {
-
+if (!valid_individual) {
+  posterior.mean = prior.mean;
+  posterior.covariance = prior.covariance;
+  return false;
+}
   // todo: need to find where this goes
   double confidence = 1.;
 
@@ -119,7 +126,7 @@ UpdateStep::condition(StateEstimate &prior/*,
   boost::math::chi_squared distribution(3);
 
   double chi_confidence = boost::math::cdf(distribution, statistic);
-  std::cout << "statistic " << std::setprecision(8) << statistic  << ", chi_confidence " << std::setprecision(8) << chi_confidence << std::endl;
+//  std::cout << "statistic " << std::setprecision(8) << statistic  << ", chi_confidence " << std::setprecision(8) << chi_confidence << std::endl;
 
 
   // Get the 95% confidence interval error ellipse
@@ -144,7 +151,7 @@ UpdateStep::condition(StateEstimate &prior/*,
   }
 
   if (/*initialised_filter && */chi_confidence > confidence) {
-    std::cout << "REJECTING SAMPLE " << std::setprecision(8) << chi_confidence << " : " << std::setprecision(8) << confidence << std::endl << " v: " << v << std::endl;
+//    std::cout << "REJECTING SAMPLE " << std::setprecision(8) << chi_confidence << " : " << std::setprecision(8) << confidence << std::endl << " v: " << v << std::endl;
     //return false;
   }
 
@@ -159,15 +166,14 @@ UpdateStep::condition(StateEstimate &prior/*,
                 rospy.loginfo('set confidence to 99.999%')
 
   */
-/* todo: publish the stats
-  if (publish_statistics) {
-    Eigen::Vector3d v_3d = v.array();
-    Eigen::Vector3d chi_95_3d = chi_95.array();
-    Eigen::Matrix3d covariance_3d;
+// todo: publish the stats
+//  if (publish_statistics) {
+    v_3d = v.array();
+    chi_95_3d = chi_95.array();
     covariance_3d << observed_covariance;
 //todo ///////    publish_statistics(v_3d, covariance_3d, chi_95_3d, observation.stamp);
-  }
-*/
+//  }
+
 //  std::cout << "covariance " << observed_covariance << std::endl;
 //  std::cout << "variance diag" << observed_variance << std::endl;
 //  std::cout << "innov " << v << std::endl;
@@ -176,7 +182,7 @@ UpdateStep::condition(StateEstimate &prior/*,
 
 
   if (chi_95_percent.minCoeff() > 1. || chi_95_percent.minCoeff() < -1.) {
-    std::cout << "CHI2 FAILED " << chi_95_percent << " : " << confidence << std::endl;
+ //   std::cout << "CHI2 FAILED " << chi_95_percent << " : " << confidence << std::endl;
   }
 
 
@@ -509,7 +515,8 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
       update_step->observation.mean = observation;
       update_step->observation.noise = covariance;
 
-      update_step->valid_flag = true;
+      update_step->valid_individual = true;
+      update_step->valid_sequence = false;
       update_step->stamp = stamp;
     }
   }
@@ -534,7 +541,8 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
     //obs->prior = states.back().posterior;
     BoundHeading(prior.mean, update_step->observation.mean);
 
-    update_step->valid_flag = true;
+    update_step->valid_individual = true;
+    update_step->valid_sequence = false;
     update_step->stamp = stamp;
 
     // Override covariance with fixed values
@@ -675,7 +683,7 @@ PositionOnlyEKF::jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_
 
 void
 PositionOnlyEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp) {
-  ROS_INFO_STREAM("new absolute position " << observation[0] << ", " << observation[1]);
+
   if (!initialised) {
     if (previous_speed > MINIMUM_INITIALISATION_SPEED) {
 
@@ -689,7 +697,8 @@ PositionOnlyEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix
       update_step->observation.mean = observation;
       update_step->observation.noise = covariance;
 
-      update_step->valid_flag = true;
+      update_step->valid_individual = true;
+      update_step->valid_sequence = false;
       update_step->stamp = stamp;
 
       initialised = true;
@@ -707,7 +716,8 @@ PositionOnlyEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix
     //obs->prior = states.back().posterior;
     BoundHeading(prior.mean, update_step->observation.mean);
 
-    update_step->valid_flag = true;
+    update_step->valid_individual = true;
+    update_step->valid_sequence = false;
     update_step->stamp = stamp;
 
     // Override covariance with fixed values
@@ -735,10 +745,16 @@ PositionOnlyEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix
 
     last_update = update_step;
 
+    update_step->CalculateConsensus(3.5, states);
 
     if (update_step->condition(prior)) {
-      states.push_back(update_step);
+
+      //  if (publish_statistics) {
+      publish_statistics(update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp);
+//  }
+
     }
+    states.push_back(update_step);
   }
 }
 
@@ -778,7 +794,9 @@ LinearFilter::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covari
     states.push_back(predict_step);
 
     predict_step->stamp = stamp;
-    predict_step->valid_flag = true;
+//    predict_step->valid_flag = true;
+    predict_step->valid_individual = true;
+    predict_step->valid_sequence = true;
 
     predict_step->motion.mean = motion * delta_time;
 
@@ -823,5 +841,127 @@ LinearFilter::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covari
 
   // todo: replace this with the last predict step motion
   previous_speed = motion[0];
+}
+
+/*
+iterate through the list,
+measure the delta heading and position from predcit between samples
+sample only every n meters ?
+measure gnss travel of at least n meters
+measure class ?
+*/
+
+bool
+UpdateStep::CalculateConsensus(float consensus_window, std::deque<std::shared_ptr<ConditionedState>> &states) {
+
+  if(!prev || fabs((stamp - prev->stamp).toSec()) > consensus_window) {
+    // cannot determine consensus without recent samples
+    std::cout << "no previous sample" << std::endl;
+    valid_individual = false;
+    valid_sequence = false;
+
+    return true;
+  }
+
+
+  if (prev && prev->prev) {
+    //estimate angle change
+
+  }
+  // calculate the discrepancy in speed since the last sample
+
+  float distance_update = sqrt(pow(observation.mean(0) - prev->observation.mean(0), 2) +
+                                     pow(observation.mean(1) - prev->observation.mean(1), 2));
+
+  float distance_predict = 0;
+
+  // set this value
+  //float speed_discrepancy;
+
+  auto current_observation = std::find(states.begin(), states.end(), prev);
+  auto end_observation = std::find(states.begin(), states.end(), prev->next);
+
+//  float distance_predict = 0;
+
+  uint16_t counter = 0;
+  if (current_observation != states.end()) {
+    while (++current_observation != end_observation) {
+      counter++;
+      //std::shared_ptr<ConditionedState> state = *current_observation;
+      auto predict_step = std::dynamic_pointer_cast<PredictStep>(*current_observation);
+      if (!predict_step) {
+        std::cout << "why not ?" << std::endl;
+        continue;
+      }
+      distance_predict += predict_step->motion.mean(0);
+    }
+  }
+  else {
+    std::cout << "couldn't find iterator" << std::endl;
+  }
+
+  speed_discrepancy = fabs((distance_update - distance_predict) / distance_update);
+
+
+  std::list<std::shared_ptr<UpdateStep>> test_updates;
+
+  float square_error_sum = 0.;
+  auto back_iterate = prev->next;
+  while (back_iterate && (stamp - back_iterate->stamp).toSec() < consensus_window) {
+    test_updates.push_front(back_iterate);
+    square_error_sum += pow(speed_discrepancy, 2);
+    back_iterate = back_iterate->prev;
+  }
+
+  if (back_iterate) {
+    std::cout << "distance " << speed_discrepancy << ": " << distance_update << ", "
+              << distance_predict << " sum^2 " << square_error_sum
+              << " from " << test_updates.size() << " samples" << std::endl;
+
+  }
+
+  if (speed_discrepancy > 0.09 || square_error_sum > 0.02) {
+    std::cout << "REJECT" << std::endl;
+//    valid_flag = false;
+    valid_individual = false;
+
+//    std::shared_ptr<UpdateStep> test_step = this;
+//    // invalidate sequence
+//    while (prev
+  }
+
+  /*
+  if (speed_discrepancy > 0.09 || square_error_sum > 0.02) {
+    for (auto invalid_update: test_updates) {
+      invalid_update->valid_flag = false;
+    }
+
+    auto current_observation = std::find(states.begin(), states.end(), test_updates.front());
+    if (current_observation != states.end()) {
+
+      current_observation--;
+      StateEstimate prior = (*current_observation)->posterior;
+      current_observation++;
+
+      int counter_states = 0;
+
+      while (current_observation != states.end()) {
+        counter_states++;
+        (*current_observation)->condition(prior);
+        prior = (*current_observation)->posterior;
+        ++current_observation;
+      }
+      std::cout << " reconditioned " << counter_states << " states:" << std::endl;
+    }
+  }
+   */
+
+  // determine using the last N UpdateStep consensus values (calculate mean square error) whether it is over the threshold,
+  //  then set the valid flag.
+
+  // calculate the previous values of the angle and use this also - recalc the mean square error for prior window
+  //   and potentially invalidate old samples
+
+  // rerun the filter for the window using the update to bypass invalid samples.
 }
 
