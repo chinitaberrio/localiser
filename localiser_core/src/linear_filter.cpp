@@ -777,7 +777,7 @@ LinearFilter::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covari
         0., 0., 0.,
         0., 0., 0.;
 
-    publish_odometry(state_odom_only, odom_uncertainty, stamp-ros::Duration(0.0001));
+    publish_odometry(state_odom_only, odom_uncertainty, stamp-ros::Duration(0.0000001));
   }
 
   if (initialised) {

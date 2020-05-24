@@ -142,6 +142,10 @@ LocaliserOutput::PublishMap(Eigen::Vector3d &map_estimate, Eigen::Matrix3d &cova
       datum_x = transform.getOrigin().x();
       datum_y = transform.getOrigin().y();
 
+      if (publish_tf) {
+        tf::StampedTransform utm_map_tf(transform, stamp, "utm", "map");
+        publish_tf(utm_map_tf, "/tf_static");
+      }
       // todo: output this transform: include in the new bag
     }
     catch (tf::TransformException &ex) {
