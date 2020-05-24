@@ -1,5 +1,5 @@
 <launch>
-  <!-- <include file="$(find zio_maps)/launch/zio_maps.launch" /> -->
+  <include file="$(find zio_maps)/launch/zio_maps.launch" />
   <group ns="localiser">
     <node pkg="localiser" type="localiser" name="localiser" output="screen" required="true">
         <param name="output_bag" value="$(arg bag_output)" />

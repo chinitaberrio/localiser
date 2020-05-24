@@ -777,7 +777,7 @@ LinearFilter::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covari
         0., 0., 0.,
         0., 0., 0.;
 
-    publish_odometry(state_odom_only, odom_uncertainty, stamp);
+    publish_odometry(state_odom_only, odom_uncertainty, stamp-ros::Duration(0.0001));
   }
 
   if (initialised) {
@@ -831,8 +831,9 @@ LinearFilter::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covari
 
     state_odom_only[2] = predict_step->posterior.mean[2];
 
-    if (publish_map)
+    if (publish_map){
       publish_map(predict_step->posterior.mean, predict_step->posterior.covariance, state_odom_only, stamp);
+    }
   }
 
   //prior_motion.mean = motion;
