@@ -239,7 +239,6 @@ ROSLocaliser::Initialise() {
 
     //bag_input->publish_pointcloud_update = std::bind(&PointCloudFeaturesPipeline::receive_message, &(*features_pipeline), std::placeholders::_1);
     //features_pipeline->publish_poles_corners = std::bind(&ICPMatcherPipeline::receive_message, &(*icp_pipeline), std::placeholders::_1, std::placeholders::_2);
-
     bag_input->ReadBag(input_bag);
 
     //graph_optimiser->global_optimizer.save("/home/stew/full.g2o");

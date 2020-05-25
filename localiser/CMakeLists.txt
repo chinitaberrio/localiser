@@ -31,6 +31,8 @@ find_package(catkin REQUIRED COMPONENTS
   gps_common
   custom_point_types
   dataset_tools
+  h264_bag_playback
+  cv_bridge
   tf
   std_msgs
   nav_msgs
@@ -49,6 +51,8 @@ find_package(catkin REQUIRED COMPONENTS
 #if (MRPT_VERSION VERSION_LESS 2.0.0)
 #        set(CMAKE_CXX_FLAGS "-Wno-deprecated-declarations ${CMAKE_CXX_FLAGS}")
 #endif()
+
+find_package(OpenCV 3 REQUIRED)
 
 find_package(Eigen3 REQUIRED)
 #find_package(GTSAM REQUIRED)
@@ -130,6 +134,7 @@ set(g2o_LIB_collection
 
 add_executable(${PROJECT_NAME}
     src/ros_localiser.cpp
+    src/bag_input.cpp
   #  src/localiser_input.cpp
   #  src/localiser_output.cpp
   #  src/observer.cpp
@@ -160,6 +165,7 @@ add_executable(${PROJECT_NAME}
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}
   ${PCL_LIBRARIES}
   ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
 #    icp_map
 #    simple_graph
  ${MRPT_LIBS} 
