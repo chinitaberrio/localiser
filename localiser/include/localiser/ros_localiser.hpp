@@ -14,8 +14,8 @@
 #include "localiser_core/localiser_input.hpp"
 #include "localiser_core/localiser_output.hpp"
 
-#include "point_cloud_features_pipeline.hpp"
-#include "icp_matcher_pipeline.hpp"
+#include <dataset_tools/point_cloud_features_pipeline.hpp>
+#include <dataset_tools/icp_matcher_pipeline.hpp>
 
 #include "localiser/instruct_localiser.h"
 

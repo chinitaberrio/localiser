@@ -39,7 +39,7 @@ public:
   std::function<void(const sensor_msgs::NavSatFix::ConstPtr&)> publish_fix_update;
   std::function<void(const nav_msgs::Odometry::ConstPtr&)> publish_speed_update;
   std::function<void(const sensor_msgs::Imu::ConstPtr&)> publish_imu_update;
-  std::function<void(const sensor_msgs::PointCloud2::ConstPtr&)> publish_pointcloud_update;
+  std::function<void(const sensor_msgs::PointCloud2::Ptr&)> publish_pointcloud_update;
 
   std::set<std::string> odom_update_topics;
   std::set<std::string> fix_update_topics;

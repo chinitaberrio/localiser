@@ -117,7 +117,9 @@ ROSLocaliser::Initialise() {
   if (output_bag.empty()) {
     ROS_INFO_STREAM("[OUTPUT] Publishing output");
     publisher = std::make_shared<Publisher>();
-    localiser_output->publish_odom = std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2);
+    //localiser_output->publish_odom.push_back(std::function<void(nav_msgs::Odometry&, std::string)>);
+    //localiser_output->publish_odom.back() = std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2);
+    localiser_output->publish_odom.push_back(std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2));
     localiser_output->publish_fix = std::bind(&Publisher::publish_fix, publisher, std::placeholders::_1, std::placeholders::_2);
     localiser_output->publish_tf = std::bind(&Publisher::publish_tf, publisher, std::placeholders::_1, std::placeholders::_2);
     localiser_output->publish_stats = std::bind(&Publisher::publish_stats, publisher, std::placeholders::_1, std::placeholders::_2);
@@ -126,7 +128,14 @@ ROSLocaliser::Initialise() {
     ROS_INFO_STREAM("[OUTPUT] Writing to bagfile " << output_bag);
     bag_output = std::make_shared<BagOutput>();
     bag_output->Initialise(output_bag);
-    localiser_output->publish_odom = std::bind(&BagOutput::publish_odom, bag_output, std::placeholders::_1, std::placeholders::_2);
+    //localiser_output->publish_odom = std::bind(&BagOutput::publish_odom, bag_output, std::placeholders::_1, std::placeholders::_2);
+
+    // publish the odom even though writing to the file - necessary if doing ICP matching
+    // todo: make this conditional on doing the ICP matching
+    publisher = std::make_shared<Publisher>();
+    localiser_output->publish_odom.push_back(std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2));
+
+    localiser_output->publish_odom.push_back(std::bind(&BagOutput::publish_odom, bag_output, std::placeholders::_1, std::placeholders::_2));
     localiser_output->publish_fix = std::bind(&BagOutput::publish_fix, bag_output, std::placeholders::_1, std::placeholders::_2);
     localiser_output->publish_tf = std::bind(&BagOutput::publish_tf, bag_output, std::placeholders::_1, std::placeholders::_2);
     localiser_output->publish_stats = std::bind(&BagOutput::publish_stats, bag_output, std::placeholders::_1, std::placeholders::_2);
@@ -226,7 +235,7 @@ ROSLocaliser::Initialise() {
     bag_input->imu_topics.insert("xsens/IMU");
 
     // imu topics
-    bag_input->pointcloud_topics.insert("/velodyne/front/filtered");
+    bag_input->pointcloud_topics.insert("/velodyne/front/points");
 
     // bind bag input functions to appropriate message handlers
     bag_input->publish_odom_update = std::bind(&ICPObservation::receive_message, &(*map_icp), std::placeholders::_1);
@@ -234,11 +243,16 @@ ROSLocaliser::Initialise() {
     bag_input->publish_fix_update = std::bind(&GNSSObservation::receive_message, &(*gnss), std::placeholders::_1);
     bag_input->publish_imu_update = std::bind(&ImuMeasurement::receive_message, &(*imu), std::placeholders::_1);
 
-    //features_pipeline = std::make_shared<PointCloudFeaturesPipeline>();
-    //icp_pipeline = std::make_shared<ICPMatcherPipeline>();
 
-    //bag_input->publish_pointcloud_update = std::bind(&PointCloudFeaturesPipeline::receive_message, &(*features_pipeline), std::placeholders::_1);
-    //features_pipeline->publish_poles_corners = std::bind(&ICPMatcherPipeline::receive_message, &(*icp_pipeline), std::placeholders::_1, std::placeholders::_2);
+    // todo: make this conditional on doing the point cloud feature pipeline
+    features_pipeline = std::make_shared<PointCloudFeaturesPipeline>();
+    bag_input->publish_pointcloud_update = std::bind(&PointCloudFeaturesPipeline::receive_message, &(*features_pipeline), std::placeholders::_1);
+
+    // todo: make this conditional on doing the ICP matching
+    icp_pipeline = std::make_shared<ICPMatcherPipeline>();
+    features_pipeline->publish_poles_corners = std::bind(&ICPMatcherPipeline::receive_message, &(*icp_pipeline), std::placeholders::_1, std::placeholders::_2);
+
+
     bag_input->ReadBag(input_bag);
 
     //graph_optimiser->global_optimizer.save("/home/stew/full.g2o");

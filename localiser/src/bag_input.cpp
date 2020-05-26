@@ -53,8 +53,9 @@ void BagInput::MessagePublisher(ros::Publisher &publisher, const rosbag::Message
 
     if (publish_pointcloud_update) {
       auto msg = message.instantiate<sensor_msgs::PointCloud2>();
-      if (msg && pointcloud_topics.count(message.getTopic()) != 0)
+      if (msg && pointcloud_topics.count(message.getTopic()) != 0) {
         publish_pointcloud_update(msg);
+      }
     }
 
     if (publish_speed_update) {

@@ -144,8 +144,7 @@ add_executable(${PROJECT_NAME}
   #  src/graph_optimiser.cpp
   #  src/gtsam_optimiser.cpp
   #  src/publisher.cpp
-    src/point_cloud_features_pipeline.cpp
-    src/icp_matcher_pipeline.cpp
+  #  src/icp_matcher_pipeline.cpp
     #src/icp_map_maker.cpp
 )
 #add_executable(edit_g2o
