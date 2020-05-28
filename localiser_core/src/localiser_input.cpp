@@ -51,6 +51,13 @@ LocaliserInput::Predict(ros::Time stamp) {
 void
 LocaliserInput::Update(Eigen::Vector3d &observation, Eigen::Matrix3d &covariance, ros::Time stamp) {
 
+  if (std::isnan(observation[0]) ||
+      std::isnan(observation[1]) ||
+      std::isnan(observation[2])) {
+    ROS_INFO_STREAM_THROTTLE(1., "rejecting update due to NAN data");
+    return;
+  }
+
   //  if (measured_speed > 3 && measured_yaw_rate < 0.01 && perform_update) {
   //if (perform_update) {
   if (measured_speed > (2. / 3.6) && perform_update) {

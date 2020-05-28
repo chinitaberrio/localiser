@@ -121,7 +121,7 @@ ROSLocaliser::Initialise() {
     //localiser_output->publish_odom.back() = std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2);
     localiser_output->publish_odom.push_back(std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2));
     localiser_output->publish_fix = std::bind(&Publisher::publish_fix, publisher, std::placeholders::_1, std::placeholders::_2);
-    localiser_output->publish_tf = std::bind(&Publisher::publish_tf, publisher, std::placeholders::_1, std::placeholders::_2);
+    localiser_output->publish_tf.push_back(std::bind(&Publisher::publish_tf, publisher, std::placeholders::_1, std::placeholders::_2));
     localiser_output->publish_stats = std::bind(&Publisher::publish_stats, publisher, std::placeholders::_1, std::placeholders::_2);
   }
   else {
@@ -134,10 +134,11 @@ ROSLocaliser::Initialise() {
     // todo: make this conditional on doing the ICP matching
     publisher = std::make_shared<Publisher>();
     localiser_output->publish_odom.push_back(std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2));
+    localiser_output->publish_tf.push_back(std::bind(&Publisher::publish_tf, publisher, std::placeholders::_1, std::placeholders::_2));
 
     localiser_output->publish_odom.push_back(std::bind(&BagOutput::publish_odom, bag_output, std::placeholders::_1, std::placeholders::_2));
     localiser_output->publish_fix = std::bind(&BagOutput::publish_fix, bag_output, std::placeholders::_1, std::placeholders::_2);
-    localiser_output->publish_tf = std::bind(&BagOutput::publish_tf, bag_output, std::placeholders::_1, std::placeholders::_2);
+    localiser_output->publish_tf.push_back(std::bind(&BagOutput::publish_tf, bag_output, std::placeholders::_1, std::placeholders::_2));
     localiser_output->publish_stats = std::bind(&BagOutput::publish_stats, bag_output, std::placeholders::_1, std::placeholders::_2);
   }
 

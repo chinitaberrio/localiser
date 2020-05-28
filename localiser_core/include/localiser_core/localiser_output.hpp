@@ -44,9 +44,12 @@ public:
 
 
   // functions to bind to that will provide the ros output messages
-  std::function<void(nav_msgs::Odometry&, std::string)> publish_odom;
+
+  std::list<std::function<void(nav_msgs::Odometry&, std::string)>> publish_odom;
+
+
   std::function<void(sensor_msgs::NavSatFix&, std::string)> publish_fix;
-  std::function<void(tf::StampedTransform&, std::string)> publish_tf;
+  std::list<std::function<void(tf::StampedTransform&, std::string)>> publish_tf;
   std::function<void(dataset_tools::LocaliserStats &msg, std::string topic_name)> publish_stats;
 
 

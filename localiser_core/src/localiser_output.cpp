@@ -62,8 +62,9 @@ LocaliserOutput::PublishOdometry(Eigen::Vector3d &odometry, Eigen::Matrix3d &cov
   msg.pose.pose.orientation.z = orientation[2];
   msg.pose.pose.orientation.w = orientation[3];
 
-  if (publish_odom) {
-    publish_odom(msg, "odometry");
+  //if (publish_odom) {
+  for (auto &publisher: publish_odom) {
+    publisher(msg, "odometry");
   }
 
   tf::Transform transform;
@@ -89,8 +90,8 @@ LocaliserOutput::PublishOdometry(Eigen::Vector3d &odometry, Eigen::Matrix3d &cov
   geom_tf.child_frame_id = "base_link";
   tf_pub_message.transforms.push_back(geom_tf);
 */
-  if (publish_tf) {
-    publish_tf(odom_baselink_tf, "/tf");
+  for (auto &publisher: publish_tf) {
+    publisher(odom_baselink_tf, "/tf");
   }
 
   //transform_buffer.setTransform(odom_baselink_tf, "zio");
@@ -116,8 +117,8 @@ LocaliserOutput::PublishMap(Eigen::Vector3d &map_estimate, Eigen::Matrix3d &cova
   msg.pose.pose.orientation.z = orientation[2];
   msg.pose.pose.orientation.w = orientation[3];
 
-  if (publish_odom) {
-    publish_odom(msg, "map");
+  for (auto &publisher: publish_odom) {
+    publisher(msg, "map");
   }
 
   // generate an global navsatfix message
@@ -142,9 +143,9 @@ LocaliserOutput::PublishMap(Eigen::Vector3d &map_estimate, Eigen::Matrix3d &cova
       datum_x = transform.getOrigin().x();
       datum_y = transform.getOrigin().y();
 
-      if (publish_tf) {
+      for (auto &publisher: publish_tf) {
         tf::StampedTransform utm_map_tf(transform, stamp, "utm", "map");
-        publish_tf(utm_map_tf, "/tf_static");
+        publisher(utm_map_tf, "/tf_static");
       }
       // todo: output this transform: include in the new bag
     }
@@ -188,8 +189,9 @@ LocaliserOutput::PublishMap(Eigen::Vector3d &map_estimate, Eigen::Matrix3d &cova
     geom_tf.child_frame_id = "odom";
     tf_pub_message.transforms.push_back(geom_tf);
 */
-    if (publish_tf) {
-      publish_tf(map_odom_tf, "/tf");
+    //if (publish_tf) {
+    for (auto &publisher: publish_tf) {
+      publisher(map_odom_tf, "/tf");
     }
 
     //transform_buffer.setTransform(map_odom_tf, "zio");

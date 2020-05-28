@@ -1,3 +1,4 @@
+/*
 //
 // Created by stew on 27/08/19.
 //
@@ -25,3 +26,4 @@ private:
 };
 
 #endif //LOCALISER_POINT_CLOUD_FEATURES_PIPELINE_HPP
+*/

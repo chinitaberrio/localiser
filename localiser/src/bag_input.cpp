@@ -36,7 +36,11 @@ void BagOutput::publish_fix(sensor_msgs::NavSatFix &msg, std::string topic_name)
 
 void BagInput::MessagePublisher(ros::Publisher &publisher, const rosbag::MessageInstance &message) {
 
-  //PointCloudFeaturesPipeline run_pipeline();
+  auto tf_msg = message.instantiate<tf2_msgs::TFMessage>();
+  if (tf_msg) {
+    std::cout << "TF: " << message.getTopic() << std::endl;
+    publisher.publish(message);
+  }
 
     if (publish_imu_update) {
       auto msg = message.instantiate<sensor_msgs::Imu>();
