@@ -38,7 +38,7 @@ void BagInput::MessagePublisher(ros::Publisher &publisher, const rosbag::Message
 
   auto tf_msg = message.instantiate<tf2_msgs::TFMessage>();
   if (tf_msg) {
-    std::cout << "TF: " << message.getTopic() << std::endl;
+//    std::cout << "TF: " << message.getTopic() << std::endl;
     publisher.publish(message);
   }
 
