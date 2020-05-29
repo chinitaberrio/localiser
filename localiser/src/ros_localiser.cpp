@@ -109,6 +109,9 @@ ROSLocaliser::Initialise() {
   // bind prediction trigger
   imu->perform_prediction = std::bind(&LocaliserInput::Predict, localiser_input, std::placeholders::_1);
 
+  bool run_pipeline = false;
+  ros::param::param<bool>("~run_pipeline", run_pipeline, false);
+
   // output method
   // publish output or write to bag
   std::string output_bag;
@@ -132,9 +135,11 @@ ROSLocaliser::Initialise() {
 
     // publish the odom even though writing to the file - necessary if doing ICP matching
     // todo: make this conditional on doing the ICP matching
-    publisher = std::make_shared<Publisher>();
-    localiser_output->publish_odom.push_back(std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2));
-    localiser_output->publish_tf.push_back(std::bind(&Publisher::publish_tf, publisher, std::placeholders::_1, std::placeholders::_2));
+    if (run_pipeline) {
+      publisher = std::make_shared<Publisher>();
+      localiser_output->publish_odom.push_back(std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2));
+      localiser_output->publish_tf.push_back(std::bind(&Publisher::publish_tf, publisher, std::placeholders::_1, std::placeholders::_2));
+    }
 
     localiser_output->publish_odom.push_back(std::bind(&BagOutput::publish_odom, bag_output, std::placeholders::_1, std::placeholders::_2));
     localiser_output->publish_fix = std::bind(&BagOutput::publish_fix, bag_output, std::placeholders::_1, std::placeholders::_2);
@@ -235,7 +240,7 @@ ROSLocaliser::Initialise() {
     bag_input->imu_topics.insert("/vn100/imu");
     bag_input->imu_topics.insert("xsens/IMU");
 
-    // imu topics
+    // point_cloud topics
     bag_input->pointcloud_topics.insert("/velodyne/front/points");
 
     // bind bag input functions to appropriate message handlers
@@ -244,15 +249,20 @@ ROSLocaliser::Initialise() {
     bag_input->publish_fix_update = std::bind(&GNSSObservation::receive_message, &(*gnss), std::placeholders::_1);
     bag_input->publish_imu_update = std::bind(&ImuMeasurement::receive_message, &(*imu), std::placeholders::_1);
 
+    if (run_pipeline) {
 
-    // todo: make this conditional on doing the point cloud feature pipeline
-    features_pipeline = std::make_shared<PointCloudFeaturesPipeline>();
-    bag_input->publish_pointcloud_update = std::bind(&PointCloudFeaturesPipeline::receive_message, &(*features_pipeline), std::placeholders::_1);
+      // todo: make this conditional on doing the point cloud feature pipeline
+      features_pipeline = std::make_shared<PointCloudFeaturesPipeline>();
+      bag_input->publish_pointcloud_update = std::bind(&PointCloudFeaturesPipeline::receive_message,
+                                                       &(*features_pipeline), std::placeholders::_1);
 
-    // todo: make this conditional on doing the ICP matching
-    icp_pipeline = std::make_shared<ICPMatcherPipeline>();
-    features_pipeline->publish_poles_corners = std::bind(&ICPMatcherPipeline::receive_message, &(*icp_pipeline), std::placeholders::_1, std::placeholders::_2);
+      // todo: make this conditional on doing the ICP matching
+      icp_pipeline = std::make_shared<ICPMatcherPipeline>();
+      features_pipeline->publish_poles_corners = std::bind(&ICPMatcherPipeline::receive_message, &(*icp_pipeline),
+                                                           std::placeholders::_1, std::placeholders::_2);
 
+      icp_pipeline->publish_pose = std::bind(&ICPObservation::receive_message, &(*map_icp), std::placeholders::_1);
+   }
 
     bag_input->ReadBag(input_bag);
 

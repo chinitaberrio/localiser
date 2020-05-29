@@ -1,0 +1,28 @@
+<map id="main" name="main">
+<area shape="rect" id="node2" href="$db/d3c/classROSLocaliser.html#a87eb20c0496eb78fbf79b02047b0583d" title="ROSLocaliser::Initialise" alt="" coords="104,517,263,544"/>
+<area shape="rect" id="node3" href="$d9/dd6/classLocaliserInput.html#ac011e7eff525fcce9455fe02b818e6bd" title="Perform the update. " alt="" coords="331,5,485,32"/>
+<area shape="rect" id="node4" href="$d9/dd6/classLocaliserInput.html#ae68cce837191ab25f634381d20633d9e" title="LocaliserInput::SetPitch" alt="" coords="327,56,489,83"/>
+<area shape="rect" id="node5" href="$d9/dd6/classLocaliserInput.html#ae180c6516bd66c3863795f20a3ff5aa3" title="LocaliserInput::SetYawRate" alt="" coords="315,107,501,133"/>
+<area shape="rect" id="node6" href="$d9/dd6/classLocaliserInput.html#a1cc7f93f4e1a088b6d5c83b1c1a9b301" title="LocaliserInput::SetSpeed" alt="" coords="324,157,492,184"/>
+<area shape="rect" id="node7" href="$d9/dd6/classLocaliserInput.html#a6bbf6614d0d685398bc2f91d23be8046" title="Perform a prediction update step. " alt="" coords="332,208,484,235"/>
+<area shape="rect" id="node8" href="$d8/d79/classPublisher.html#a71aebaf15148df0235c0334ea24ea8fe" title="Publisher::publish_odom" alt="" coords="326,259,490,285"/>
+<area shape="rect" id="node9" href="$d8/d79/classPublisher.html#a3680674bafcab16d121b3de83e384c49" title="Publisher::publish_fix" alt="" coords="335,309,481,336"/>
+<area shape="rect" id="node10" href="$d8/d79/classPublisher.html#a8c335cc87ed416acde7705251f5dcd25" title="Publisher::publish_tf" alt="" coords="338,360,478,387"/>
+<area shape="rect" id="node11" href="$d8/d79/classPublisher.html#aeee966603f4166ea388103c5d6f74427" title="Publisher::publish\l_stats" alt="" coords="345,411,471,453"/>
+<area shape="rect" id="node12" href="$d2/dca/classGraphOptimiser.html#a10c4ebcd3c62d4f7e9723217dad9c10f" title="GraphOptimiser::AddAbsolute\lPosition" alt="" coords="311,477,505,518"/>
+<area shape="rect" id="node14" href="$d2/dca/classGraphOptimiser.html#a84089489a0d771139a5fcdf122d1e5cd" title="Perform the optimisation. " alt="" coords="312,542,504,583"/>
+<area shape="rect" id="node16" href="$d0/d14/classLocaliserOutput.html#afb83a836ec1c7e23533cb536bde59530" title="Perform the prediction. " alt="" coords="326,607,490,649"/>
+<area shape="rect" id="node17" href="$d0/d14/classLocaliserOutput.html#ad7d801e75f55fc67a92c028aaee509d7" title="LocaliserOutput::PublishMap" alt="" coords="313,673,503,700"/>
+<area shape="rect" id="node18" href="$d8/d46/classLinearFilter.html#a5e0ccd6cd4efdc2ac577c6ddf3d7cd45" title="LinearFilter::AddAbsolute\lPosition" alt="" coords="324,725,492,766"/>
+<area shape="rect" id="node19" href="$d8/d46/classLinearFilter.html#abf8fdf19d954c89ce037f4af5030d240" title="Perform the optimisation. " alt="" coords="325,790,491,831"/>
+<area shape="rect" id="node23" href="$d0/d14/classLocaliserOutput.html#ad55fe408deb38add250609108d263554" title="LocaliserOutput::Publish\lStatistics" alt="" coords="326,855,490,897"/>
+<area shape="rect" id="node24" href="$da/d34/classImuMeasurement.html#a66fbe1376e888c8dc7d4062f2ec1dfdd" title="ImuMeasurement::receive\l_message" alt="" coords="321,921,495,962"/>
+<area shape="rect" id="node25" href="$d3/d5e/classGNSSObservation.html#afd04d0b5d0a942a4402e00bb1748e1df" title="GNSSObservation::receive\l_message" alt="" coords="318,986,498,1027"/>
+<area shape="rect" id="node26" href="$dd/d76/classSpeedMeasurement.html#adb209fa0d3651ff9e021476367322bc7" title="SpeedMeasurement::receive\l_message" alt="" coords="314,1051,502,1093"/>
+<area shape="rect" id="node27" href="$d2/d68/classICPObservation.html#ab062de662cf7f05f9c29d99498bf4e88" title="ICPObservation::receive\l_message" alt="" coords="325,1117,491,1158"/>
+<area shape="rect" id="node13" href="$d2/dca/classGraphOptimiser.html#a2a8d8069e34b5edadb2b1755ff88fca9" title="GraphOptimiser::RunOptimiser" alt="" coords="553,484,755,511"/>
+<area shape="rect" id="node15" href="$d2/dca/classGraphOptimiser.html#a6b97aef2806056e2308b1cc0bcd520e8" title="GraphOptimiser::VehicleModel" alt="" coords="555,549,753,576"/>
+<area shape="rect" id="node20" href="$d8/d46/classLinearFilter.html#a9dc1810ce336bfca460d80aad9b308b6" title="LinearFilter::vehicle\l_model" alt="" coords="587,725,721,766"/>
+<area shape="rect" id="node21" href="$d8/d46/classLinearFilter.html#a908980e59e1fd9212d5afef2d0b3174d" title="LinearFilter::transition\l_matrix_fn" alt="" coords="581,790,727,831"/>
+<area shape="rect" id="node22" href="$d8/d46/classLinearFilter.html#a0183219b900d6cf72e1c7ba5ec881a2c" title="LinearFilter::jacobian\l_matrix_fn" alt="" coords="583,855,725,897"/>
+</map>

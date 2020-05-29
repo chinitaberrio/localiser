@@ -1,0 +1,4 @@
+<map id="Predictor" name="Predictor">
+<area shape="rect" id="node2" href="$da/d34/classImuMeasurement.html" title="{ImuMeasurement\n||+ ImuMeasurement()\l+ receive_message()\l}" alt="" coords="5,175,149,267"/>
+<area shape="rect" id="node3" href="$dd/d76/classSpeedMeasurement.html" title="{SpeedMeasurement\n||+ SpeedMeasurement()\l+ receive_message()\l}" alt="" coords="174,175,333,267"/>
+</map>
