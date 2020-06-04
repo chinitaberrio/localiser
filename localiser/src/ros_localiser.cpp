@@ -59,7 +59,12 @@ ROSLocaliser::ROSLocaliser() :
     imu(std::make_shared<ImuMeasurement>()),
     speed(std::make_shared<SpeedMeasurement>()),
     map_icp(std::make_shared<ICPObservation>()),
-    gnss(std::make_shared<GNSSObservation>()) {
+    gnss(std::make_shared<GNSSObservation>()),
+    publisher(std::make_shared<Publisher>()),
+    bag_input(std::make_shared<BagInput>()),
+    bag_output(std::make_shared<BagOutput>()),
+    graph_optimiser(std::make_shared<GraphOptimiser>()),
+    linear_filter(std::make_shared<PositionOnlyEKF>()){
 
 
   ros::NodeHandle n;
@@ -97,29 +102,31 @@ bool status
 void
 ROSLocaliser::Initialise() {
 
-  // bind update method
-  map_icp->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-  gnss->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-
-  // bind set variables
-  imu->update_pitch = std::bind(&LocaliserInput::SetPitch, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-  imu->update_yaw_rate = std::bind(&LocaliserInput::SetYawRate, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-  speed->update_speed = std::bind(&LocaliserInput::SetSpeed, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-
-  // bind prediction trigger
-  imu->perform_prediction = std::bind(&LocaliserInput::Predict, localiser_input, std::placeholders::_1);
-
+  //! Read the parameters to determine how the localiser will work
   bool run_pipeline = false;
   ros::param::param<bool>("~run_pipeline", run_pipeline, false);
 
-  // output method
-  // publish output or write to bag
+  // output method: publish output or write to bag
   std::string output_bag;
   ros::param::param<std::string>("~output_bag", output_bag, "");
 
+  // input method: from subscriber or rosbag play
+  std::string input_bag;
+  ros::param::param<std::string>("~input_bag", input_bag, "");
+
+
+
+
+
+
+
+  /*********************************************************
+   *  connect the ROSOutput layer to the output destinations
+   */
+
+
   if (output_bag.empty()) {
     ROS_INFO_STREAM("[OUTPUT] Publishing output");
-    publisher = std::make_shared<Publisher>();
     //localiser_output->publish_odom.push_back(std::function<void(nav_msgs::Odometry&, std::string)>);
     //localiser_output->publish_odom.back() = std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2);
     localiser_output->publish_odom.push_back(std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2));
@@ -129,14 +136,12 @@ ROSLocaliser::Initialise() {
   }
   else {
     ROS_INFO_STREAM("[OUTPUT] Writing to bagfile " << output_bag);
-    bag_output = std::make_shared<BagOutput>();
     bag_output->Initialise(output_bag);
     //localiser_output->publish_odom = std::bind(&BagOutput::publish_odom, bag_output, std::placeholders::_1, std::placeholders::_2);
 
     // publish the odom even though writing to the file - necessary if doing ICP matching
     // todo: make this conditional on doing the ICP matching
     if (run_pipeline) {
-      publisher = std::make_shared<Publisher>();
       localiser_output->publish_odom.push_back(std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2));
       localiser_output->publish_tf.push_back(std::bind(&Publisher::publish_tf, publisher, std::placeholders::_1, std::placeholders::_2));
     }
@@ -147,21 +152,27 @@ ROSLocaliser::Initialise() {
     localiser_output->publish_stats = std::bind(&BagOutput::publish_stats, bag_output, std::placeholders::_1, std::placeholders::_2);
   }
 
-  // localisation method
+
+
+  /*********************************************************
+   *  connect the localiser input to the localiser layer,
+   *  and the localiser layer to the ROSOutput layer
+   */
+
   // run using gtsam or graph optimizer
   if (0) {
+    /*
     // bind localisation method inputs
-//    gtsam_optimiser = std::make_shared<GtsamOptimiser>();
-//    localiser_input->perform_update = std::bind(&GtsamOptimiser::AddAbsolutePosition, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-//    localiser_input->perform_prediction = std::bind(&GtsamOptimiser::AddRelativeMotion, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-
+    // gtsam_optimiser = std::make_shared<GtsamOptimiser>();
+    // localiser_input->perform_update = std::bind(&GtsamOptimiser::AddAbsolutePosition, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    // localiser_input->perform_prediction = std::bind(&GtsamOptimiser::AddRelativeMotion, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    //
     // where to send localisation method outputs
-//    gtsam_optimiser->publish_odometry = std::bind(&LocaliserOutput::PublishOdometry, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-
+    // gtsam_optimiser->publish_odometry = std::bind(&LocaliserOutput::PublishOdometry, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    */
   }
   else if(false){
     // bind localisation method inputs
-    graph_optimiser = std::make_shared<GraphOptimiser>();
     localiser_input->perform_update = std::bind(&GraphOptimiser::AddAbsolutePosition, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     localiser_input->perform_prediction = std::bind(&GraphOptimiser::AddRelativeMotion, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
@@ -172,14 +183,12 @@ ROSLocaliser::Initialise() {
   else if(false){
     // DO WITHOUT SAVING YET TO THE FILE
     // bind localisation method inputs
-    graph_optimiser = std::make_shared<GraphOptimiser>();
     localiser_input->perform_update = std::bind(&GraphOptimiser::AddAbsolutePosition, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     localiser_input->perform_prediction = std::bind(&GraphOptimiser::AddRelativeMotion, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
     graph_optimiser->run_optimiser_each_observation = false;
   }
   else {
-    linear_filter = std::make_shared<PositionOnlyEKF>();
 
     localiser_input->perform_update = std::bind(&LinearFilter::AddAbsolutePosition, linear_filter, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     localiser_input->perform_prediction = std::bind(&LinearFilter::AddRelativeMotion, linear_filter, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
@@ -191,10 +200,28 @@ ROSLocaliser::Initialise() {
   }
 
 
-  // input method
-  // from subscriber or rosbag play
-  std::string input_bag;
-  ros::param::param<std::string>("~input_bag", input_bag, "");
+  /*********************************************************
+   *  connect the ROSInput layer to the localiser input layer
+   */
+
+  // bind update method
+  map_icp->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  gnss->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+
+  // bind set variables
+  imu->update_pitch = std::bind(&LocaliserInput::SetPitch, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  imu->update_yaw_rate = std::bind(&LocaliserInput::SetYawRate, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  speed->update_speed = std::bind(&LocaliserInput::SetSpeed, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+
+  // We want the prediction step to be run whenever the IMU gives a msg (100Hz)
+  imu->perform_prediction = std::bind(&LocaliserInput::Predict, localiser_input, std::placeholders::_1);
+
+
+
+  /*********************************************************
+   *  Initialise the input sources, connect to the ROSInput
+   *  layer and run
+   */
 
   if (input_bag.empty()) {
     ROS_INFO_STREAM("[INPUT] Subscribing to topics");
@@ -207,22 +234,14 @@ ROSLocaliser::Initialise() {
     subscribers.push_back(n.subscribe("/zio/odometry/rear", 1000, &SpeedMeasurement::receive_message, &(*speed)));
     subscribers.push_back(n.subscribe("/velodyne/front/poles/average", 1000, &ICPObservation::receive_message, &(*map_icp)));
 
+    //todo: make a list of topics for each type of message
+    //todo: in the localiser_input/output set the bind/unbind as required
 
-
-
-
-//todo: make a list of topics for each type of message
-//todo: in the localiser_input/output set the bind/unbind as required
-
-
-
-
-
+    // Spin and read messages forever
     ros::spin();
   }
   else {
     ROS_INFO_STREAM("[INPUT] Reading data from bagfile" << input_bag);
-    bag_input = std::make_shared<BagInput>();
 
     // odometry update messages (i.e. from ICP)
     // bag_input.odom_update_topics.insert("/localisation/gnss/utm")
@@ -268,7 +287,6 @@ ROSLocaliser::Initialise() {
 
     //graph_optimiser->global_optimizer.save("/home/stew/full.g2o");
     //graph_optimiser->RunOptimiser(true);
-
   }
 }
 
