@@ -49,7 +49,7 @@ LocaliserInput::Predict(ros::Time stamp) {
 
 
 void
-LocaliserInput::Update(Eigen::Vector3d &observation, Eigen::Matrix3d &covariance, ros::Time stamp) {
+LocaliserInput::Update(Eigen::Vector3d &observation, Eigen::Matrix3d &covariance, ros::Time stamp, std::string &source) {
 
   if (std::isnan(observation[0]) ||
       std::isnan(observation[1]) ||
@@ -61,7 +61,7 @@ LocaliserInput::Update(Eigen::Vector3d &observation, Eigen::Matrix3d &covariance
   //  if (measured_speed > 3 && measured_yaw_rate < 0.01 && perform_update) {
   //if (perform_update) {
   if (measured_speed > (2. / 3.6) && perform_update) {
-    perform_update(observation, covariance, stamp);
+    perform_update(observation, covariance, stamp, source);
   }
 }
 

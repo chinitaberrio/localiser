@@ -33,7 +33,7 @@ public:
   Observer();
 
   //! Perform the prediction
-  std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, ros::Time)> perform_update;
+  std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, ros::Time, std::string&)> perform_update;
 
 
 
@@ -69,10 +69,12 @@ public:
                             msg->pose.pose.position.y,
                             yaw;
 
+      std::string source = "map";
       // covariance [0] is x-twist-linear
       perform_update(observation_vector,
                      observation_covariance,
-                     msg->header.stamp);
+                     msg->header.stamp,
+                     source);
     }
   }
 };
@@ -126,7 +128,9 @@ public:
 
       if (perform_update) {
         Eigen::Vector3d observation(east, north, heading);
-        perform_update(observation, covariance, msg->header.stamp);
+
+        std::string source = "gnss";
+        perform_update(observation, covariance, msg->header.stamp, source);
       }
 
   }

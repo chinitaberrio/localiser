@@ -51,11 +51,12 @@ bool
 UpdateStep::condition(StateEstimate &prior/*,
                      Observation &observation,
                      StateEstimate &posterior*/) {
-if (!valid_individual) {
-  posterior.mean = prior.mean;
-  posterior.covariance = prior.covariance;
-  return false;
-}
+
+  if (!valid_individual) {
+    posterior.mean = prior.mean;
+    posterior.covariance = prior.covariance;
+    return false;
+  }
   // todo: need to find where this goes
   double confidence = 1.;
 
@@ -96,6 +97,7 @@ if (!valid_individual) {
 
   //std::cout << "x, P, H " << x << std::endl << std::endl << P << std::endl << std::endl << H << std::endl << std::endl;
   //std::cout << "z, zpred, v " << z << std::endl << std::endl << zpred << std::endl << std::endl << v << std::endl << std::endl;
+  std::cout << "z, zpred, v " << z << std::endl << std::endl << zpred << std::endl << std::endl << v << std::endl;
 
   // Calculate the KF (or EKF) update given the prior state [x,P], the
   // innovation v, the observe uncertainty R, and the (linearised)
@@ -500,8 +502,89 @@ PositionHeadingEKF::jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d inp
 
 
 void
-PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp) {
+PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp, std::string &source) {
 
+  if (!initialised) {
+    if (previous_speed > MINIMUM_INITIALISATION_SPEED) {
+
+      // Add directly, this is the initialisation of the filter, so it is definitely considered valid
+      std::shared_ptr<UpdateStep> update_step = std::make_shared<UpdateStep>();
+      states.push_back(update_step);
+
+      update_step->posterior.mean = observation;
+      update_step->posterior.covariance = covariance;
+
+      update_step->observation.mean = observation;
+      update_step->observation.noise = covariance;
+
+      update_step->valid_individual = true;
+      update_step->valid_sequence = false;
+      update_step->stamp = stamp;
+
+      initialised = true;
+    }
+  }
+  else {
+    // The observations are generally older than the latest relative motion estimate
+    //float delta_time = (stamp - prior_stamp).toSec();
+    //predict(motion * delta_time, covariance);
+    StateEstimate &prior = states.back()->posterior;
+    std::shared_ptr<UpdateStep> update_step = std::make_shared<UpdateStep>();
+    update_step->observation.mean = observation;
+    update_step->observation.noise = covariance;
+
+    //obs->prior = states.back().posterior;
+    BoundHeading(prior.mean, update_step->observation.mean);
+
+    update_step->valid_individual = true;
+    update_step->valid_sequence = false;
+    update_step->stamp = stamp;
+
+    // Override covariance with fixed values
+    Eigen::Matrix3d R; // observation noise
+
+    // calculate noise R
+    R << POSITION_ERROR, 0., 0.,
+        0., POSITION_ERROR, 0.,
+        0., 0., HEADING_ERROR;
+
+    R = R.array().square();
+
+    update_step->observation.noise = R;
+
+//    Eigen::MatrixXd H = Eigen::MatrixXd(2,3);
+    update_step->observation.observation_matrix = Eigen::MatrixXd(3,3);
+    update_step->observation.observation_matrix << 1., 0., 0.,
+        0., 1., 0.,
+        0., 0., 1.;
+
+
+    // generate a linked list of predict steps
+    if (last_update) {
+      last_update->next = update_step;
+      update_step->prev = last_update;
+    }
+
+    last_update = update_step;
+
+    update_step->CalculateConsensus(3.5, states);
+
+    if (update_step->condition(prior)) {
+
+      //  if (publish_statistics) {
+      publish_statistics(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source);
+//  }
+
+    }
+    else {
+      std::string source_bad = source + "-bad";
+      publish_statistics(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source_bad);
+    }
+
+    states.push_back(update_step);
+  }
+
+  /*
   if (!initialised) {
     if (previous_speed > MINIMUM_INITIALISATION_SPEED) {
 
@@ -563,6 +646,7 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
     }
 
   }
+  */
 }
 
 
@@ -682,7 +766,7 @@ PositionOnlyEKF::jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_
 
 
 void
-PositionOnlyEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp) {
+PositionOnlyEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp, std::string &source) {
 
   if (!initialised) {
     if (previous_speed > MINIMUM_INITIALISATION_SPEED) {
@@ -750,7 +834,7 @@ PositionOnlyEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix
     if (update_step->condition(prior)) {
 
       //  if (publish_statistics) {
-      publish_statistics(update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp);
+      publish_statistics(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source);
 //  }
 
     }

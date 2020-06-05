@@ -40,7 +40,7 @@ public:
   //! Perform the prediction
   void PublishOdometry(Eigen::Vector3d &odometry, Eigen::Matrix3d &covariance, ros::Time stamp);
 
-  void PublishStatistics(Eigen::Vector3d &innovation, Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time stamp);
+  void PublishStatistics(Eigen::Vector3d &observation, Eigen::Vector3d &innovation, Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time stamp, std::string &source);
 
 
   // functions to bind to that will provide the ros output messages

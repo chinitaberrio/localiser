@@ -276,7 +276,7 @@ GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& cova
 }
 
 void
-GraphOptimiser::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp) {
+GraphOptimiser::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp, std::string &source) {
 
   // find the nearest relative odometry index corresponding to this observation
   uint32_t nearest_odometry_vertex = 0;

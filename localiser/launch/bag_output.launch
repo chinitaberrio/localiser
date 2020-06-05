@@ -1,5 +1,6 @@
 <!-- in a separate terminal, do
 roslaunch zio_maps zio_maps.launch
+
 -->
 
 
@@ -10,10 +11,10 @@ roslaunch zio_maps zio_maps.launch
         <param name="output_bag" value="$(arg bag_output)" />
         <param name="input_bag" value="$(arg bag_input)" />
 
-        <param name="limit_playback_speed" value="true" />
-        <param name="percentage_start" value="55" />
-        <param name="percentage_end" value="75" />
-        <param name="run_pipeline" value="true" />
+        <param name="limit_playback_speed" value="false" />
+        <param name="percentage_start" value="10" />
+        <param name="percentage_end" value="30" />
+        <param name="run_pipeline" value="false" />
 
 
     </node>

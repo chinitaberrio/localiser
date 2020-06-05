@@ -14,10 +14,16 @@ LocaliserOutput::LocaliserOutput() :
 
 
 void
-LocaliserOutput::PublishStatistics(Eigen::Vector3d &innovation, Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time stamp) {
+LocaliserOutput::PublishStatistics(Eigen::Vector3d &observation, Eigen::Vector3d &innovation, Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time stamp, std::string &source) {
 
   dataset_tools::LocaliserStats stats_msg;
   stats_msg.header.stamp = stamp;
+
+  stats_msg.source = source;
+
+  stats_msg.observation.x = observation(0);
+  stats_msg.observation.y = observation(1);
+  stats_msg.observation.yaw = observation(2);
 
   stats_msg.innovation.x = innovation(0);
   stats_msg.innovation.y = innovation(1);

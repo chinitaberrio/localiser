@@ -22,7 +22,7 @@ public:
   LocaliserInput();
 
   //! Pass the update vector to the localisation method
-  std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, ros::Time)> perform_update;
+  std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, ros::Time, std::string &source)> perform_update;
 
   //! Pass the prediction vector to the localisation method
   std::function<void(Eigen::Vector2d&, Eigen::Matrix2d&, ros::Time)> perform_prediction;
@@ -36,7 +36,7 @@ public:
   void Predict(ros::Time stamp);
 
   //! Perform the update
-  void Update(Eigen::Vector3d &observation, Eigen::Matrix3d &covariance, ros::Time stamp);
+  void Update(Eigen::Vector3d &observation, Eigen::Matrix3d &covariance, ros::Time stamp, std::string &source);
 
   std::vector<std::shared_ptr<Predictor>> predictors;
   std::vector<std::shared_ptr<Observer>> observers;

@@ -52,7 +52,7 @@ public:
 
   std::shared_ptr<GraphOptimiser> graph_optimiser;
 //  std::shared_ptr<GtsamOptimiser> gtsam_optimiser;
-  std::shared_ptr<PositionOnlyEKF> linear_filter;
+  std::shared_ptr<PositionHeadingEKF> linear_filter;
 
   ros::ServiceServer service;
 

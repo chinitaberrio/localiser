@@ -54,17 +54,17 @@ int main(int argc, char** argv) {
 
 // create the localiser modules
 ROSLocaliser::ROSLocaliser() :
+    bag_input(std::make_shared<BagInput>()),
+    bag_output(std::make_shared<BagOutput>()),
+    publisher(std::make_shared<Publisher>()),
     localiser_input(std::make_shared<LocaliserInput>()),
     localiser_output(std::make_shared<LocaliserOutput>()),
     imu(std::make_shared<ImuMeasurement>()),
     speed(std::make_shared<SpeedMeasurement>()),
     map_icp(std::make_shared<ICPObservation>()),
     gnss(std::make_shared<GNSSObservation>()),
-    publisher(std::make_shared<Publisher>()),
-    bag_input(std::make_shared<BagInput>()),
-    bag_output(std::make_shared<BagOutput>()),
     graph_optimiser(std::make_shared<GraphOptimiser>()),
-    linear_filter(std::make_shared<PositionOnlyEKF>()){
+    linear_filter(std::make_shared<PositionHeadingEKF>()){
 
 
   ros::NodeHandle n;
@@ -164,7 +164,7 @@ ROSLocaliser::Initialise() {
     /*
     // bind localisation method inputs
     // gtsam_optimiser = std::make_shared<GtsamOptimiser>();
-    // localiser_input->perform_update = std::bind(&GtsamOptimiser::AddAbsolutePosition, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    // localiser_input->perform_update = std::bind(&GtsamOptimiser::AddAbsolutePosition, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
     // localiser_input->perform_prediction = std::bind(&GtsamOptimiser::AddRelativeMotion, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     //
     // where to send localisation method outputs
@@ -173,7 +173,7 @@ ROSLocaliser::Initialise() {
   }
   else if(false){
     // bind localisation method inputs
-    localiser_input->perform_update = std::bind(&GraphOptimiser::AddAbsolutePosition, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    localiser_input->perform_update = std::bind(&GraphOptimiser::AddAbsolutePosition, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
     localiser_input->perform_prediction = std::bind(&GraphOptimiser::AddRelativeMotion, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
     // where to send localisation method outputs
@@ -183,20 +183,20 @@ ROSLocaliser::Initialise() {
   else if(false){
     // DO WITHOUT SAVING YET TO THE FILE
     // bind localisation method inputs
-    localiser_input->perform_update = std::bind(&GraphOptimiser::AddAbsolutePosition, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    localiser_input->perform_update = std::bind(&GraphOptimiser::AddAbsolutePosition, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
     localiser_input->perform_prediction = std::bind(&GraphOptimiser::AddRelativeMotion, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
     graph_optimiser->run_optimiser_each_observation = false;
   }
   else {
 
-    localiser_input->perform_update = std::bind(&LinearFilter::AddAbsolutePosition, linear_filter, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    localiser_input->perform_update = std::bind(&LinearFilter::AddAbsolutePosition, linear_filter, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
     localiser_input->perform_prediction = std::bind(&LinearFilter::AddRelativeMotion, linear_filter, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
     // where to send localisation method outputs
     linear_filter->publish_odometry = std::bind(&LocaliserOutput::PublishOdometry, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     linear_filter->publish_map = std::bind(&LocaliserOutput::PublishMap, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-    linear_filter->publish_statistics = std::bind(&LocaliserOutput::PublishStatistics, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+    linear_filter->publish_statistics = std::bind(&LocaliserOutput::PublishStatistics, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6);
   }
 
 
@@ -205,8 +205,8 @@ ROSLocaliser::Initialise() {
    */
 
   // bind update method
-  map_icp->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-  gnss->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  map_icp->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+  gnss->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
 
   // bind set variables
   imu->update_pitch = std::bind(&LocaliserInput::SetPitch, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
