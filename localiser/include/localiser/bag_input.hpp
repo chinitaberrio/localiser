@@ -8,6 +8,7 @@
 #include <ros/ros.h>
 
 #include <h264_bag_playback/h264_bag_playback.hpp>
+#include <dataset_tools/behavior_tree_pipeline.hpp>
 
 // include messages to write to bag file
 #include <nav_msgs/Odometry.h>
@@ -33,7 +34,8 @@ public:
   void ImagePublisher(image_transport::Publisher &publisher, const sensor_msgs::ImageConstPtr &message) {}
   void CameraInfoPublisher(ros::Publisher &publisher, const sensor_msgs::CameraInfoConstPtr &message) {}
 
-
+  int odom_msg_count;
+  int odom_msg_reset_count;
 
   std::function<void(const nav_msgs::Odometry::ConstPtr&)> publish_odom_update;
   std::function<void(const sensor_msgs::NavSatFix::ConstPtr&)> publish_fix_update;
@@ -46,6 +48,8 @@ public:
   std::set<std::string> odom_speed_topics;
   std::set<std::string> pointcloud_topics;
   std::set<std::string> imu_topics;
+
+  std::shared_ptr<BehaviorTreePipeline> behavior_tree_pipeline;
 
 
 };

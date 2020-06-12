@@ -10,31 +10,6 @@
 
 
 int main(int argc, char** argv) {
-/*
-  LinearFilter linear_filter;
-  linear_filter.state << 0., 0., 0.;
-
-  linear_filter.state_var << 0.1, 0., 0.,
-                             0., 0.1, 0.,
-                             0., 0., 0.1;
-
-
-  Eigen::Vector3d observation;
-  observation << 1., 0., 0.;
-
-  Eigen::Matrix3d observation_noise;
-  observation_noise << 0.1, 0., 0.,
-                       0., 0.1, 0.,
-                       0., 0., 0.001;
-
-
-  linear_filter.update(observation, observation_noise);
-
-//  linear_filter.test_predict();
-//  linear_filter.test_update();
-
-  return 0;
-*/
 
   // todo: parameters
   //  localise_input min speed to process update message
@@ -91,7 +66,40 @@ uint8 instructionType
 bool status
    */
 
-  ROS_INFO_STREAM("received localiser instruction " << req.instructionType);
+  switch(req.instructionType) {
+     case 0://RESET
+        ROS_INFO_STREAM("RESET: localiser reset, reinitialising using GPS");
+        gnss->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+        map_icp->perform_update = nullptr;//std::function<void()>();
+
+        // make a new object of localisation method
+        linear_filter = std::make_shared<PositionHeadingEKF>();
+        // connect localisation method inputs
+        localiser_input->perform_update = std::bind(&LinearFilter::AddAbsolutePosition, linear_filter, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+        localiser_input->perform_prediction = std::bind(&LinearFilter::AddRelativeMotion, linear_filter, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        // where to send localisation method outputs
+        linear_filter->publish_odometry = std::bind(&LocaliserOutput::PublishOdometry, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        linear_filter->publish_map = std::bind(&LocaliserOutput::PublishMap, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+        linear_filter->publish_statistics = std::bind(&LocaliserOutput::PublishStatistics, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6);
+        break;
+
+     case 1://MAP_ON
+        ROS_INFO_STREAM("MAP_ON: localiser switched to using map-icp updates");
+        gnss->perform_update = nullptr;//std::function<void()>();
+        map_icp->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+        break;
+
+     case 3://ABS_ON
+        ROS_INFO_STREAM("ABS_ON: localiser switched to using GPS updates");
+        gnss->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+        map_icp->perform_update = nullptr;//std::function<void()>();
+        break;
+
+     default:
+        ROS_WARN_STREAM("Currently undefined localiser instruction type " << int(req.instructionType));
+
+  }
+
   res.status = true;
 
   return true;
@@ -126,6 +134,8 @@ ROSLocaliser::Initialise() {
 
 
   if (output_bag.empty()) {
+//      if (true) {
+
     ROS_INFO_STREAM("[OUTPUT] Publishing output");
     //localiser_output->publish_odom.push_back(std::function<void(nav_msgs::Odometry&, std::string)>);
     //localiser_output->publish_odom.back() = std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2);
@@ -149,7 +159,9 @@ ROSLocaliser::Initialise() {
     localiser_output->publish_odom.push_back(std::bind(&BagOutput::publish_odom, bag_output, std::placeholders::_1, std::placeholders::_2));
     localiser_output->publish_fix = std::bind(&BagOutput::publish_fix, bag_output, std::placeholders::_1, std::placeholders::_2);
     localiser_output->publish_tf.push_back(std::bind(&BagOutput::publish_tf, bag_output, std::placeholders::_1, std::placeholders::_2));
-    localiser_output->publish_stats = std::bind(&BagOutput::publish_stats, bag_output, std::placeholders::_1, std::placeholders::_2);
+//    localiser_output->publish_stats = std::bind(&BagOutput::publish_stats, bag_output, std::placeholders::_1, std::placeholders::_2);
+    localiser_output->publish_stats = std::bind(&Publisher::publish_stats, publisher, std::placeholders::_1, std::placeholders::_2);
+
   }
 
 
@@ -205,7 +217,9 @@ ROSLocaliser::Initialise() {
    */
 
   // bind update method
-  map_icp->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+  // initial state is gnss localisation. will switch to map based localisation if behavior tree sees fit
+  // map_icp->perform_update is an empty std::function(not initialized)
+//  map_icp->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
   gnss->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
 
   // bind set variables
