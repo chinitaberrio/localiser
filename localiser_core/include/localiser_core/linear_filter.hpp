@@ -198,21 +198,8 @@ public:
   float POSITION_ERROR = 2.5; // m
 
   Eigen::Vector3d state_odom_only;
-
-//  std::vector<std::unique_ptr<sf::Shape>>
-//  std::deque<Observation> update_steps;
-//  std::deque<RelativeMotion> prediction_steps;
-
   std::deque<std::shared_ptr<ConditionedState>> states;
 
-//  Eigen::Vector3d state;
-//  Eigen::Matrix3d state_var;
-
-//  Eigen::Vector2d prior_motion;
-//  Eigen::Matrix2d prior_motion_covariance;
-  //ros::Time prior_stamp;
-
-  //RelativeMotion prior_motion;
 
   float previous_speed = 0.;
 
@@ -250,11 +237,6 @@ protected:
                RelativeMotion &motion,
                StateEstimate &posterior);
 */
-
-//  void predict(const Eigen::VectorXd input_state, const Eigen::MatrixXd input_state_variance);
-  //Eigen::VectorXd input_state,
-  //Eigen::MatrixXd input_state_variance,
-
 
   std::shared_ptr<UpdateStep> last_update;
   std::shared_ptr<PredictStep> last_predict;

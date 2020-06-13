@@ -43,9 +43,8 @@ LocaliserOutput::PublishStatistics(Eigen::Vector3d &observation, Eigen::Vector3d
   stats_msg.covariance[7] = covariance(7);
   stats_msg.covariance[8] = covariance(8);
 
-
-  if (publish_stats) {
-    publish_stats(stats_msg, "stats");
+  for (auto &publish_stat: publish_stats) {
+    publish_stat(stats_msg, "stats");
   }
 }
 
@@ -68,7 +67,6 @@ LocaliserOutput::PublishOdometry(Eigen::Vector3d &odometry, Eigen::Matrix3d &cov
   msg.pose.pose.orientation.z = orientation[2];
   msg.pose.pose.orientation.w = orientation[3];
 
-  //if (publish_odom) {
   for (auto &publisher: publish_odom) {
     publisher(msg, "odometry");
   }
@@ -79,28 +77,10 @@ LocaliserOutput::PublishOdometry(Eigen::Vector3d &odometry, Eigen::Matrix3d &cov
   q.setRPY(0, 0, odometry[2]);
   transform.setRotation(q);
   tf::StampedTransform odom_baselink_tf(transform, stamp, "odom", "base_link");
-/*
-  transform_broadcaster.sendTransform(odom_baselink_tf);
 
-  tf2_msgs::TFMessage tf_pub_message;
-  geometry_msgs::TransformStamped geom_tf;
-  geom_tf.transform.rotation.x = q[0];
-  geom_tf.transform.rotation.y = q[1];
-  geom_tf.transform.rotation.z = q[2];
-  geom_tf.transform.rotation.w = q[3];
-  geom_tf.transform.translation.x = odometry[0];
-  geom_tf.transform.translation.y = odometry[1];
-  geom_tf.transform.translation.z = 0.0;
-  geom_tf.header.stamp = stamp;
-  geom_tf.header.frame_id = "odom";
-  geom_tf.child_frame_id = "base_link";
-  tf_pub_message.transforms.push_back(geom_tf);
-*/
   for (auto &publisher: publish_tf) {
     publisher(odom_baselink_tf, "/tf");
   }
-
-  //transform_buffer.setTransform(odom_baselink_tf, "zio");
 
 }
 
@@ -137,8 +117,8 @@ LocaliserOutput::PublishMap(Eigen::Vector3d &map_estimate, Eigen::Matrix3d &cova
   fix_msg.latitude = lat;
   fix_msg.longitude = lon;
 
-  if (publish_fix) {
-    publish_fix(fix_msg, "fix");
+  for (auto &fix_publisher: publish_fix) {
+    fix_publisher(fix_msg, "fix");
   }
 
   if (datum_x == 0. || datum_y == 0.) {
@@ -167,35 +147,13 @@ LocaliserOutput::PublishMap(Eigen::Vector3d &map_estimate, Eigen::Matrix3d &cova
     tf::Vector3 map_odom_delta(odom_delta[0], odom_delta[1], 0.0);
     tf::Vector3 datum(datum_x, datum_y, 0.0);
 
-
-
-
-
     // map to odom transform is translation only, no rotation
     transform.setOrigin(map_position - map_odom_delta - datum);
     tf::Quaternion q;
     q.setRPY(0., 0., 0.);
     transform.setRotation(q);
     tf::StampedTransform map_odom_tf(transform, stamp, "map", "odom");
-/*
-    transform_broadcaster.sendTransform(map_odom_tf);
 
-
-    tf2_msgs::TFMessage tf_pub_message;
-    geometry_msgs::TransformStamped geom_tf;
-    geom_tf.transform.rotation.x = q[0];
-    geom_tf.transform.rotation.y = q[1];
-    geom_tf.transform.rotation.z = q[2];
-    geom_tf.transform.rotation.w = q[3];
-    geom_tf.transform.translation.x = transform.getOrigin()[0];
-    geom_tf.transform.translation.y = transform.getOrigin()[1];
-    geom_tf.transform.translation.z = transform.getOrigin()[2];
-    geom_tf.header.stamp = stamp;
-    geom_tf.header.frame_id = "map";
-    geom_tf.child_frame_id = "odom";
-    tf_pub_message.transforms.push_back(geom_tf);
-*/
-    //if (publish_tf) {
     for (auto &publisher: publish_tf) {
       publisher(map_odom_tf, "/tf");
     }

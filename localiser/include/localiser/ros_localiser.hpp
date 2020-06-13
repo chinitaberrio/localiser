@@ -61,6 +61,10 @@ public:
                            localiser::instruct_localiser::Response& res);
 
 
+  bool run_pipeline;
+  std::string output_bag;
+  std::string input_bag;
+
 
 };
 

@@ -38,11 +38,11 @@ void BagOutput::publish_fix(sensor_msgs::NavSatFix &msg, std::string topic_name)
 
 void BagInput::MessagePublisher(ros::Publisher &publisher, const rosbag::MessageInstance &message) {
 
-  auto tf_msg = message.instantiate<tf2_msgs::TFMessage>();
-  if (tf_msg) {
+//  auto tf_msg = message.instantiate<tf2_msgs::TFMessage>();
+//  if (tf_msg) {
 //    std::cout << "TF: " << message.getTopic() << std::endl;
 //    publisher.publish(message);
-  }
+//  }
 
     if (publish_imu_update) {
       auto msg = message.instantiate<sensor_msgs::Imu>();
@@ -67,18 +67,15 @@ void BagInput::MessagePublisher(ros::Publisher &publisher, const rosbag::Message
     if (publish_speed_update) {
       auto msg = message.instantiate<nav_msgs::Odometry>();
       if (msg && odom_speed_topics.count(message.getTopic()) != 0){
+
           // in offline processing/read from bag mode, publish a tick msg for behavior tree using /zio/odometry/rear
           // max frequency is 10hz
           if(message.getTopic() == "/zio/odometry/rear"){
               if(odom_msg_count<odom_msg_reset_count){
                   odom_msg_count++;
               }else{
-//                  publisher.publish(message);// use this to prompt a behavior tree tick
-
                   behavior_tree_pipeline = std::make_shared<BehaviorTreePipeline>();
                   behavior_tree_pipeline->receive_message(msg);
-//                  bag_input->publish_pointcloud_update = std::bind(&PointCloudFeaturesPipeline::receive_message,
-//                                                                   &(*features_pipeline), std::placeholders::_1);
                   odom_msg_count = 0;
               }
           }
