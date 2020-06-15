@@ -18,6 +18,7 @@
   <depend>roslib</depend>
   <depend>tf</depend>
   <depend>tf2_msgs</depend>
+  <depend>libg2o</depend>
   <depend>mrpt_bridge</depend>
   <depend>gps_common</depend>
   <depend>std_msgs</depend>
