@@ -24,6 +24,6 @@
   <depend>sensor_msgs</depend>
   <depend>dataset_tools</depend>
   <depend>nav_msgs</depend>
-  <depend>libsuitesparse</depend>  <!-- required for graph optimisation -->
+  <depend>libsuitesparse-dev</depend>  <!-- required for graph optimisation -->
 
 </package>

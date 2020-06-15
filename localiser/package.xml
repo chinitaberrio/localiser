@@ -26,7 +26,7 @@
   <depend>h264_bag_playback</depend>
   <depend>sensor_msgs</depend>
   <depend>nav_msgs</depend>
-  <depend>libsuitesparse</depend>  <!-- required for graph optimisation -->
+  <depend>libsuitesparse-dev</depend>  <!-- required for graph optimisation -->
   <depend>localiser_core</depend>
 
 </package>
