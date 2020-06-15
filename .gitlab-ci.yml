@@ -20,6 +20,11 @@ build:
     - wget http://acfr-ros-pro-1.srv.sydney.edu.au:4440/build-ros-deb.sh
     - chmod +x ./build-ros-deb.sh
     - roscore &
+    - # fix for ROS bug with conflicting lz4 versions in melodic
+    - mv /usr/include/flann/ext/lz4.h /usr/include/flann/ext/lz4.h.bak
+    - mv /usr/include/flann/ext/lz4hc.h /usr/include/flann/ext/lz4.h.bak
+    - ln -s /usr/include/lz4.h /usr/include/flann/ext/lz4.h
+    - ln -s /usr/include/lz4hc.h /usr/include/flann/ext/lz4hc.h
     - ./build-ros-deb.sh
   artifacts:
     paths:
