@@ -15,10 +15,13 @@
 
 
 
-BagInput::BagInput() : h264_bag_playback() {
+BagSource::BagSource() : h264_bag_playback() {
     // max frequency is 10hz
     float FREQENCY = 2.;// set behavior tree tick to 2hz
     odom_msg_reset_count = 10./FREQENCY;
+
+
+
 }
 
 
@@ -36,7 +39,11 @@ void BagOutput::publish_fix(sensor_msgs::NavSatFix &msg, std::string topic_name)
 */
 
 
-void BagInput::MessagePublisher(ros::Publisher &publisher, const rosbag::MessageInstance &message) {
+void BagSource::MessagePublisher(ros::Publisher &publisher, const rosbag::MessageInstance &message) {
+
+//    std::string const& topic = message.getTopic();
+//    ros::Time const& header_time = message.getTime();
+
 
 //  auto tf_msg = message.instantiate<tf2_msgs::TFMessage>();
 //  if (tf_msg) {
@@ -44,27 +51,22 @@ void BagInput::MessagePublisher(ros::Publisher &publisher, const rosbag::Message
 //    publisher.publish(message);
 //  }
 
-    if (publish_imu_update) {
       auto msg = message.instantiate<sensor_msgs::Imu>();
       if (msg != NULL && imu_topics.count(message.getTopic()) != 0)
-        publish_imu_update(msg);
-    }
+        receive_IMU_msg(msg);
 
-    if (publish_fix_update) {
       auto msg = message.instantiate<sensor_msgs::NavSatFix>();
-      if (msg && fix_update_topics.count(message.getTopic()) != 0) {
-        publish_fix_update(msg);
+      if (msg && fix_topics.count(message.getTopic()) != 0) {
+        receive_fix_msg(msg);
       }
-    }
 
-    if (publish_pointcloud_update) {
+
       auto msg = message.instantiate<sensor_msgs::PointCloud2>();
       if (msg && pointcloud_topics.count(message.getTopic()) != 0) {
         publish_pointcloud_update(msg);
       }
-    }
 
-    if (publish_speed_update) {
+
       auto msg = message.instantiate<nav_msgs::Odometry>();
       if (msg && odom_speed_topics.count(message.getTopic()) != 0){
 
@@ -80,23 +82,20 @@ void BagInput::MessagePublisher(ros::Publisher &publisher, const rosbag::Message
               }
           }
 
-          publish_speed_update(msg);
+          receive_odom_speed_Msg(msg);
       }
-    }
 
-    if (publish_odom_update) {
+
       auto msg = message.instantiate<nav_msgs::Odometry>();
       if (msg && odom_update_topics.count(message.getTopic()) != 0){
         publish_odom_update(msg);
       }
-    }
-
 
 }
 
 
 
-void BagInput::ReadBag(std::string bag_file) {
+void BagSource::ReadBag(std::string bag_file) {
 
 
   //private_nh.setParam("bag_file", bag_file_name);
@@ -106,6 +105,12 @@ void BagInput::ReadBag(std::string bag_file) {
   std::cout << bag_file_name << std::endl;
 
   this->init_playback();
+
+  for(auto topic_callback : topics){
+
+  }
+
+
   this->ReadFromBag();
 
   std::cout << this->bag_file_name << std::endl;

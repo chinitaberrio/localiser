@@ -7,7 +7,7 @@
 //#include "localiser_core/gtsam_optimiser.hpp"
 #include "localiser_core/linear_filter.hpp"
 
-#include "bag_input.hpp"
+#include "bag_source.hpp"
 #include "dataset_tools/bag_output.hpp"
 #include "localiser_core/publisher.hpp"
 

@@ -194,7 +194,7 @@ ROSLocaliser::Initialise() {
 
 
 
-  /*********************************************************
+    /*********************************************************
      *  connect the ROSInput layer to the localiser input layer
      */
 

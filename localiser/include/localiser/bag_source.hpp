@@ -10,12 +10,17 @@
 #include <h264_bag_playback/h264_bag_playback.hpp>
 #include <dataset_tools/behavior_tree_pipeline.hpp>
 
-// include messages to write to bag file
-#include <nav_msgs/Odometry.h>
+#include <Eigen/Core>
+#include <Eigen/StdVector>
 
+#include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/PointCloud2.h>
+
+#include <tf2/transform_datatypes.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2/utils.h>
 
 
 
@@ -24,9 +29,9 @@
  *
  */
 
-class BagInput : public dataset_toolkit::h264_bag_playback {
+class BagSource : public dataset_toolkit::h264_bag_playback, public SourceInterface {
 public:
-  BagInput();
+  BagSource();
 
   void ReadBag(std::string bag_file);
 
@@ -36,21 +41,14 @@ public:
 
   int odom_msg_count;
   int odom_msg_reset_count;
-
-  std::function<void(const nav_msgs::Odometry::ConstPtr&)> publish_odom_update;
-  std::function<void(const sensor_msgs::NavSatFix::ConstPtr&)> publish_fix_update;
-  std::function<void(const nav_msgs::Odometry::ConstPtr&)> publish_speed_update;
-  std::function<void(const sensor_msgs::Imu::ConstPtr&)> publish_imu_update;
-  std::function<void(const sensor_msgs::PointCloud2::Ptr&)> publish_pointcloud_update;
-
-  std::set<std::string> odom_update_topics;
-  std::set<std::string> fix_update_topics;
-  std::set<std::string> odom_speed_topics;
-  std::set<std::string> pointcloud_topics;
-  std::set<std::string> imu_topics;
-
   std::shared_ptr<BehaviorTreePipeline> behavior_tree_pipeline;
 
+
+  std::set<std::string> odom_SE2_topics;
+  std::set<std::string> fix_topics;
+  std::set<std::string> pointcloud_topics;
+  std::set<std::string> imu_topics;
+  std::set<std::string> odom_speed_topics;
 
 };
 
