@@ -122,12 +122,7 @@ ROSLocaliser::Initialise() {
 
 
     /*********************************************************
-     *  topics to use
-     */
-
-
-    /*********************************************************
-    *  input sources connect to the ROSInput
+    *  topics to use and input sources connect to the ROSInput
     */
 
     if (input_bag.empty()) {

@@ -15,7 +15,7 @@
 
 
 
-BagSource::BagSource() : h264_bag_playback() {
+BagSource::BagSource(){
     // max frequency is 10hz
     float FREQENCY = 2.;// set behavior tree tick to 2hz
     odom_msg_reset_count = 10./FREQENCY;
@@ -63,7 +63,7 @@ void BagSource::MessagePublisher(ros::Publisher &publisher, const rosbag::Messag
 
       auto msg = message.instantiate<sensor_msgs::PointCloud2>();
       if (msg && pointcloud_topics.count(message.getTopic()) != 0) {
-        publish_pointcloud_update(msg);
+        receive_pointcloud_msg(msg);
       }
 
 
@@ -88,7 +88,7 @@ void BagSource::MessagePublisher(ros::Publisher &publisher, const rosbag::Messag
 
       auto msg = message.instantiate<nav_msgs::Odometry>();
       if (msg && odom_update_topics.count(message.getTopic()) != 0){
-        publish_odom_update(msg);
+        receive_odom_SE2_msg(msg);
       }
 
 }
@@ -105,11 +105,6 @@ void BagSource::ReadBag(std::string bag_file) {
   std::cout << bag_file_name << std::endl;
 
   this->init_playback();
-
-  for(auto topic_callback : topics){
-
-  }
-
 
   this->ReadFromBag();
 

@@ -12,30 +12,31 @@ LocaliserInput::LocaliserInput() :
 {}
 
 
-void
-LocaliserInput::SetPitch(double pitch, double variance, ros::Time stamp) {
-  measured_pitch = pitch;
-  // todo: add roll, output horizon tf to bag
-}
+//void
+//LocaliserInput::SetPitch(double pitch, double variance, ros::Time stamp) {
+//  measured_pitch = pitch;
+//  // todo: add roll, output horizon tf to bag
+//}
 
-void
-LocaliserInput::SetSpeed(double speed, double variance, ros::Time stamp) {
-  measured_speed = speed;
-}
+//void
+//LocaliserInput::SetSpeed(double speed, double variance, ros::Time stamp) {
+//  measured_speed = speed;
+//}
 
-void
-LocaliserInput::SetYawRate(double yaw_rate, double variance, ros::Time stamp) {
-  measured_yaw_rate = yaw_rate;
-}
+//void
+//LocaliserInput::SetYawRate(double yaw_rate, double variance, ros::Time stamp) {
+//  measured_yaw_rate = yaw_rate;
+//}
 
 void
 LocaliserInput::Predict(ros::Time stamp) {
 
-  //! The 2d component (horizontal) of the robot speed.
-  double speed_horizontal = measured_speed * cos(measured_pitch);
 
   // Estimate the rate of movement (speed and angular velocity)
   if (perform_prediction) {
+      //! The 2d component (horizontal) of the robot speed.
+      double speed_horizontal = measured_speed * cos(measured_pitch);
+
     Eigen::Vector2d robot_motion;
     robot_motion << speed_horizontal, measured_yaw_rate;
 
@@ -48,22 +49,20 @@ LocaliserInput::Predict(ros::Time stamp) {
 }
 
 
-void
-LocaliserInput::Update(Eigen::Vector3d &observation, Eigen::Matrix3d &covariance, ros::Time stamp, std::string &source) {
+//void
+//LocaliserInput::Update(Eigen::Vector3d &observation, Eigen::Matrix3d &covariance, ros::Time stamp, std::string &source) {
 
-  if (std::isnan(observation[0]) ||
-      std::isnan(observation[1]) ||
-      std::isnan(observation[2])) {
-    ROS_INFO_STREAM_THROTTLE(1., "rejecting update due to NAN data");
-    return;
-  }
+//  if (std::isnan(observation[0]) ||
+//      std::isnan(observation[1]) ||
+//      std::isnan(observation[2])) {
+//    ROS_INFO_STREAM_THROTTLE(1., "rejecting update due to NAN data");
+//    return;
+//  }
 
-  //  if (measured_speed > 3 && measured_yaw_rate < 0.01 && perform_update) {
-  //if (perform_update) {
-  if (measured_speed > (2. / 3.6) && perform_update) {
-    perform_update(observation, covariance, stamp, source);
-  }
-}
+//  if (measured_speed > (2. / 3.6) && perform_update) {
+//    perform_update(observation, covariance, stamp, source);
+//  }
+//}
 
 
 

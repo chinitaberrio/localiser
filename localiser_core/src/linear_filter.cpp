@@ -27,12 +27,6 @@ LinearFilter::LinearFilter()
 
 }
 
-LinearFilter::~LinearFilter() {
-
-}
-
-
-
 
 void
 LinearFilter::BoundHeading(const Eigen::Vector3d &current_state, Eigen::Vector3d &observation) {
@@ -44,6 +38,102 @@ LinearFilter::BoundHeading(const Eigen::Vector3d &current_state, Eigen::Vector3d
     observation[2] -= (2.*M_PI);
   }
 }
+
+
+
+
+
+
+
+
+
+bool
+UpdateStep::CalculateConsensus(float consensus_window, std::deque<std::shared_ptr<ConditionedState>> &states) {
+
+  if(!prev || fabs((stamp - prev->stamp).toSec()) > consensus_window) {
+    // cannot determine consensus without recent samples
+    std::cout << "no previous sample" << std::endl;
+    valid_individual = false;
+    valid_sequence = false;
+
+    return true;
+  }
+
+
+  if (prev && prev->prev) {
+    //estimate angle change
+
+  }
+  // calculate the discrepancy in speed since the last sample
+
+  float distance_update = sqrt(pow(observation.mean(0) - prev->observation.mean(0), 2) +
+                                     pow(observation.mean(1) - prev->observation.mean(1), 2));
+
+  float distance_predict = 0;
+
+  // set this value
+  //float speed_discrepancy;
+
+  auto current_observation = std::find(states.begin(), states.end(), prev);
+  auto end_observation = std::find(states.begin(), states.end(), prev->next);
+
+//  float distance_predict = 0;
+
+  uint16_t counter = 0;
+  if (current_observation != states.end()) {
+    while (++current_observation != end_observation) {
+      counter++;
+      //std::shared_ptr<ConditionedState> state = *current_observation;
+      auto predict_step = std::dynamic_pointer_cast<PredictStep>(*current_observation);
+      if (!predict_step) {
+        std::cout << "why not ?" << std::endl;
+        continue;
+      }
+      distance_predict += predict_step->motion.mean(0);
+    }
+  }
+  else {
+    std::cout << "couldn't find iterator" << std::endl;
+  }
+
+  speed_discrepancy = fabs((distance_update - distance_predict) / distance_update);
+
+
+  std::list<std::shared_ptr<UpdateStep>> test_updates;
+
+  float square_error_sum = 0.;
+  auto back_iterate = prev->next;
+  while (back_iterate && (stamp - back_iterate->stamp).toSec() < consensus_window) {
+    test_updates.push_front(back_iterate);
+    square_error_sum += pow(speed_discrepancy, 2);
+    back_iterate = back_iterate->prev;
+  }
+
+  if (back_iterate) {
+    std::cout << "distance " << speed_discrepancy << ": " << distance_update << ", "
+              << distance_predict << " sum^2 " << square_error_sum
+              << " from " << test_updates.size() << " samples" << std::endl;
+
+  }
+
+  if (speed_discrepancy > 0.09 || square_error_sum > 0.02) {
+    std::cout << "REJECT" << std::endl;
+//    valid_flag = false;
+    valid_individual = false;
+
+  }
+
+
+
+  // determine using the last N UpdateStep consensus values (calculate mean square error) whether it is over the threshold,
+  //  then set the valid flag.
+
+  // calculate the previous values of the angle and use this also - recalc the mean square error for prior window
+  //   and potentially invalidate old samples
+
+  // rerun the filter for the window using the update to bypass invalid samples.
+}
+
 
 
 
@@ -240,40 +330,17 @@ UpdateStep::condition(StateEstimate &prior/*,
 }
 
 
-bool
-PredictStep::condition(StateEstimate &prior/*,
-                      RelativeMotion &motion,
-                      StateEstimate &posterior*/) {
 
 
-    /*LinearFilterAbsoluteSample &prior,
-                      Eigen::VectorXd input_state,
-                      Eigen::MatrixXd input_state_variance,
-                      LinearFilterAbsoluteSample &posterior) {*/
 
-  //    Perform the prediction step of the EKF
-  //    Update the mean and covariance, append the results to the state_history
 
-  // apply transition model to predict current mean
-  posterior.mean = motion_model(prior.mean, motion.mean);
 
-  // determine the transition matrix function
-  Eigen::MatrixXd F = transition_matrix_fn(posterior.mean, motion.mean);
-  Eigen::MatrixXd G = jacobian_matrix_fn(posterior.mean, motion.mean);
 
-  Eigen::MatrixXd P = prior.covariance;
-  Eigen::MatrixXd Q = motion.noise;
 
-  // TODO: work out when there is no input?
-  // Update the covariances depending on whether there is an input or not
-  // if (min(G.shape) > 0)
-  posterior.covariance = F * P * F.transpose() + G * Q * G.transpose();
-  // else
-  //   var = F * P * F.transpose();
 
-  // todo: are there any conditions where the predict should fail ?
-  return true;
-}
+
+
+
 
 
 
@@ -655,6 +722,19 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 Eigen::Vector3d
 PositionOnlyEKF::vehicle_model(const Eigen::Vector3d &mean, const Eigen::Vector2d &input_state){
   /*
@@ -845,208 +925,12 @@ PositionOnlyEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix
 
 
 
-//! Perform the optimisation
-void
-LinearFilter::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covariance, ros::Time stamp) {
-
-  float delta_time = 0.01; //(stamp - prior_stamp).toSec();
-
-  Eigen::Vector2d delta_state_change = motion * delta_time;
-  state_odom_only = vehicle_model(state_odom_only, delta_state_change);
-
-  if (publish_odometry) {
-    Eigen::Matrix3d odom_uncertainty;
-
-    odom_uncertainty << 0., 0., 0.,
-        0., 0., 0.,
-        0., 0., 0.;
-
-    publish_odometry(state_odom_only, odom_uncertainty, stamp-ros::Duration(0.0000001));
-  }
-
-  if (initialised) {
-
-    StateEstimate &prior = states.back()->posterior;
-
-    std::shared_ptr<PredictStep> predict_step = std::make_shared<PredictStep>();
-
-    using std::placeholders::_1;
-    using std::placeholders::_2;
-    predict_step->motion_model = std::bind(&LinearFilter::vehicle_model, this, _1, _2);
-    predict_step->transition_matrix_fn = std::bind(&LinearFilter::transition_matrix_fn, this, _1, _2);
-    predict_step->jacobian_matrix_fn = std::bind(&LinearFilter::jacobian_matrix_fn, this, _1, _2);
-    states.push_back(predict_step);
-
-    predict_step->stamp = stamp;
-//    predict_step->valid_flag = true;
-    predict_step->valid_individual = true;
-    predict_step->valid_sequence = true;
-
-    predict_step->motion.mean = motion * delta_time;
-
-    //Eigen::Matrix2d Q; //process noise
-    predict_step->motion.noise << VELOCITY_NOISE, 0.,
-        0., YAWRATE_NOISE;
-
-    predict_step->motion.noise *= delta_time;
-    predict_step->motion.noise = predict_step->motion.noise.array().square();
-
-    // generate a linked list of predict steps
-    if (last_predict) {
-      last_predict->next = predict_step;
-      predict_step->prev = last_predict;
-    }
-
-    last_predict = predict_step;
 
 
 
-        //predict(delta_state_change, Q);
-    predict_step->condition(prior);
-
-    //ROS_INFO_STREAM("predict " << predict_step->posterior.mean);
-
-    /*
-       force the odom filter to use the absolute heading estimate - the odom source should be continuous
-       in position but not in heading - the drifting of the baselink in the odom frame can only be
-       in position. if there was an angular offset between the map->odom, this rotation
-       could only be applied to the base_link directly
-    */
-
-    state_odom_only[2] = predict_step->posterior.mean[2];
-
-    if (publish_map){
-      publish_map(predict_step->posterior.mean, predict_step->posterior.covariance, state_odom_only, stamp);
-    }
-  }
-
-  //prior_motion.mean = motion;
-  //prior_motion_covariance = covariance;
-  //prior_motionprior_stamp = stamp;
-
-  // todo: replace this with the last predict step motion
-  previous_speed = motion[0];
-}
-
-/*
-iterate through the list,
-measure the delta heading and position from predcit between samples
-sample only every n meters ?
-measure gnss travel of at least n meters
-measure class ?
-*/
-
-bool
-UpdateStep::CalculateConsensus(float consensus_window, std::deque<std::shared_ptr<ConditionedState>> &states) {
-
-  if(!prev || fabs((stamp - prev->stamp).toSec()) > consensus_window) {
-    // cannot determine consensus without recent samples
-    std::cout << "no previous sample" << std::endl;
-    valid_individual = false;
-    valid_sequence = false;
-
-    return true;
-  }
 
 
-  if (prev && prev->prev) {
-    //estimate angle change
-
-  }
-  // calculate the discrepancy in speed since the last sample
-
-  float distance_update = sqrt(pow(observation.mean(0) - prev->observation.mean(0), 2) +
-                                     pow(observation.mean(1) - prev->observation.mean(1), 2));
-
-  float distance_predict = 0;
-
-  // set this value
-  //float speed_discrepancy;
-
-  auto current_observation = std::find(states.begin(), states.end(), prev);
-  auto end_observation = std::find(states.begin(), states.end(), prev->next);
-
-//  float distance_predict = 0;
-
-  uint16_t counter = 0;
-  if (current_observation != states.end()) {
-    while (++current_observation != end_observation) {
-      counter++;
-      //std::shared_ptr<ConditionedState> state = *current_observation;
-      auto predict_step = std::dynamic_pointer_cast<PredictStep>(*current_observation);
-      if (!predict_step) {
-        std::cout << "why not ?" << std::endl;
-        continue;
-      }
-      distance_predict += predict_step->motion.mean(0);
-    }
-  }
-  else {
-    std::cout << "couldn't find iterator" << std::endl;
-  }
-
-  speed_discrepancy = fabs((distance_update - distance_predict) / distance_update);
 
 
-  std::list<std::shared_ptr<UpdateStep>> test_updates;
 
-  float square_error_sum = 0.;
-  auto back_iterate = prev->next;
-  while (back_iterate && (stamp - back_iterate->stamp).toSec() < consensus_window) {
-    test_updates.push_front(back_iterate);
-    square_error_sum += pow(speed_discrepancy, 2);
-    back_iterate = back_iterate->prev;
-  }
-
-  if (back_iterate) {
-    std::cout << "distance " << speed_discrepancy << ": " << distance_update << ", "
-              << distance_predict << " sum^2 " << square_error_sum
-              << " from " << test_updates.size() << " samples" << std::endl;
-
-  }
-
-  if (speed_discrepancy > 0.09 || square_error_sum > 0.02) {
-    std::cout << "REJECT" << std::endl;
-//    valid_flag = false;
-    valid_individual = false;
-
-//    std::shared_ptr<UpdateStep> test_step = this;
-//    // invalidate sequence
-//    while (prev
-  }
-
-  /*
-  if (speed_discrepancy > 0.09 || square_error_sum > 0.02) {
-    for (auto invalid_update: test_updates) {
-      invalid_update->valid_flag = false;
-    }
-
-    auto current_observation = std::find(states.begin(), states.end(), test_updates.front());
-    if (current_observation != states.end()) {
-
-      current_observation--;
-      StateEstimate prior = (*current_observation)->posterior;
-      current_observation++;
-
-      int counter_states = 0;
-
-      while (current_observation != states.end()) {
-        counter_states++;
-        (*current_observation)->condition(prior);
-        prior = (*current_observation)->posterior;
-        ++current_observation;
-      }
-      std::cout << " reconditioned " << counter_states << " states:" << std::endl;
-    }
-  }
-   */
-
-  // determine using the last N UpdateStep consensus values (calculate mean square error) whether it is over the threshold,
-  //  then set the valid flag.
-
-  // calculate the previous values of the angle and use this also - recalc the mean square error for prior window
-  //   and potentially invalidate old samples
-
-  // rerun the filter for the window using the update to bypass invalid samples.
-}
 

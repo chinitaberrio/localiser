@@ -25,23 +25,15 @@
 
 #include <mrpt/obs/CActionRobotMovement2D.h>
 
-//#include <mrpt/math/CMatrixDouble33.h>
 #include <mrpt/math/CMatrixFixedNumeric.h>
 #include <mrpt/poses/CPosePDFGaussian.h>
-//#include <mrpt/obs/CObservationBearingRange.h>
-//#include <mrpt/obs/CActionCollection.h>
-//#include <mrpt/obs/CActionRobotMovement2D.h>
-//#include <mrpt/slam/CRangeBearingKFSLAM2D.h>
-//#include <mrpt/gui/CDisplayWindow3D.h>
-//#include <mrpt/math/lightweight_geom_data.h>
-//#include <mrpt/opengl/stock_objects.h>
+
 
 /*!
  * \brief Optimise a graph of poses
  * Optimises a graph structure containing poses linked by relative motion, with additional edges for global
  * observations
  */
-
 
 
 // ------------------------------------------------------
@@ -60,28 +52,6 @@
 #include <mrpt/random.h>
 #include <mrpt/system/os.h>
 #include <iostream>
-
-/*
-using namespace mrpt;
-using namespace mrpt::bayes;
-using namespace mrpt::gui;
-using namespace mrpt::math;
-using namespace mrpt::obs;
-using namespace mrpt::random;
-using namespace std;
-
-#define BEARING_SENSOR_NOISE_STD DEG2RAD(15.0f)
-#define RANGE_SENSOR_NOISE_STD 0.3f
-#define DELTA_TIME 0.1f
-
-#define VEHICLE_INITIAL_X 4.0f
-#define VEHICLE_INITIAL_Y 4.0f
-#define VEHICLE_INITIAL_V 1.0f
-#define VEHICLE_INITIAL_W DEG2RAD(20.0f)
-
-#define TRANSITION_MODEL_STD_XY 0.03f
-#define TRANSITION_MODEL_STD_VXY 0.20f
-*/
 
 
 // TODO: observe speed also ? estimate noise ?
@@ -110,8 +80,6 @@ public:
   bool valid_individual;
   bool valid_sequence;
 
-
-
 };
 
 
@@ -130,17 +98,6 @@ public:
   Eigen::MatrixXd observation_matrix;   // H
 
 };
-
-class RelativeMotion{
-
-public:
-
-  RelativeMotion() {}
-
-  Eigen::Vector2d mean;
-  Eigen::Matrix2d noise;    // Q
-};
-
 
 class UpdateStep: public ConditionedState {
 
@@ -161,25 +118,6 @@ public:
 
   std::shared_ptr<UpdateStep> prev, next;
 };
-
-
-class PredictStep: public ConditionedState {
-
-public:
-  RelativeMotion motion;
-
-  bool condition(StateEstimate &prior);
-
-  std::function<Eigen::Vector3d(const Eigen::Vector3d &, const Eigen::Vector2d &)> motion_model;
-  std::function<Eigen::Matrix3d(Eigen::Vector3d, Eigen::Vector2d)> transition_matrix_fn;
-  std::function<Eigen::MatrixXd(Eigen::Vector3d, Eigen::Vector2d)> jacobian_matrix_fn;
-
-  //Eigen::Vector3d motion_model(const Eigen::Vector3d &mean, const Eigen::Vector2d &input_state) {return Eigen::Vector3d();}
-
-
-  std::shared_ptr<PredictStep> prev, next;
-};
-
 
 
 class LinearFilter : public LocalisationMethod {
@@ -221,23 +159,6 @@ public:
 
 
 protected:
-/*
-  bool update(StateEstimate &prior,
-              Observation &observation,
-              StateEstimate &posterior);
-
-              //const Eigen::VectorXd &observation,
-              //const Eigen::MatrixXd &observation_noise,
-              //  const Eigen::MatrixXd &observation_matrix,
-              //ros::Time stamp
-              //
-
-
-  void predict(StateEstimate &prior,
-               RelativeMotion &motion,
-               StateEstimate &posterior);
-*/
-
   std::shared_ptr<UpdateStep> last_update;
   std::shared_ptr<PredictStep> last_predict;
 
