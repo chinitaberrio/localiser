@@ -37,13 +37,13 @@ public:
   {}
 
   //! Callback to publish odometry information
-  std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, ros::Time)> publish_odometry;
+  std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, ros::Time)> signal_odom_state;
 
   //! Callback to publish map information
-  std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, Eigen::Vector3d&, ros::Time)> publish_map;
+  std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, Eigen::Vector3d&, ros::Time)> signal_map_state;
 
   //! Callback to publish statistics
-  std::function<void(Eigen::Vector3d&, Eigen::Vector3d&, Eigen::Matrix3d&, Eigen::Vector3d&, ros::Time, std::string&)> publish_statistics;
+  std::function<void(Eigen::Vector3d&, Eigen::Vector3d&, Eigen::Matrix3d&, Eigen::Vector3d&, ros::Time, std::string&)> signal_statistics;
 
   // Current estimate of the robot state (map frame, odom frame)
   Eigen::Vector3d map_state;
@@ -57,3 +57,5 @@ public:
 
 
 #endif
+
+

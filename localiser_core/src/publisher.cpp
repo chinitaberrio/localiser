@@ -8,57 +8,57 @@
 
 
 
-void Publisher::publish_odom(nav_msgs::Odometry &msg, std::string topic_name) {
+void Publisher::publish_odom(std::string &frame_id, std::string &topic_name, Eigen::Vector3d &SE2_estimate,
+                             Eigen::Matrix3d &covariance, ros::Time &stamp) {
 
-  if (publishers.find(topic_name) == publishers.end()) {
+
+
     ros::NodeHandle n;
-    publishers[topic_name] = n.advertise<nav_msgs::Odometry>(topic_name, 100);
- }
+    pub = n.advertise<nav_msgs::Odometry>(topic_name, 100);
 
-  publishers[topic_name].publish(msg);
+    auto msg = receive_odom2msg(frame_id, topic_name, SE2_estimate, covariance, stamp);
+
+    pub.publish(msg);
+
+
+
 }
 
 
-void Publisher::publish_fix(sensor_msgs::NavSatFix &msg, std::string topic_name) {
+void Publisher::publish_stats(std::string &topic_name, Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
+                              Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time &stamp, std::string &source) {
 
-  if (publishers.find(topic_name) == publishers.end()) {
+
     ros::NodeHandle n;
-    publishers[topic_name] = n.advertise<sensor_msgs::NavSatFix>(topic_name, 100);
-  }
+    pub = n.advertise<dataset_tools::LocaliserStats>(topic_name, 100);
 
-  publishers[topic_name].publish(msg);
+    auto msg = receive_stats2msg(topic_name, observation, innovation,
+                                 covariance, confidence, stamp, source);
+
+    pub.publish(msg);
+
+
+
 }
-
-
-
-void Publisher::publish_stats(dataset_tools::LocaliserStats &msg, std::string topic_name) {
-
-  if (publishers.find(topic_name) == publishers.end()) {
-    ros::NodeHandle n;
-    publishers[topic_name] = n.advertise<dataset_tools::LocaliserStats>(topic_name, 100);
-  }
-
-  publishers[topic_name].publish(msg);
-}
-
 
 
 void
-Publisher::publish_tf(tf::StampedTransform &msg, std::string topic_name) {
+Publisher::publish_map_odom_tf(Eigen::Vector3d &map_SE2_estimate, ros::Time &stamp) {
+
+  auto msg = receive_map_tf2msg(map_SE2_estimate, stamp);
 
   transform_broadcaster.sendTransform(msg);
 
 }
 
 
+void
+Publisher::publish_odom_tf(Eigen::Vector3d &odom_SE2_estimate, ros::Time &stamp) {
 
-void Publisher::Initialise() {
-  //ros::NodeHandle n;
-  //pub = n.advertise<nav_msgs::Odometry>("/localiser/map/odometry", 100);
+  auto msg = receive_odom_tf2msg(odom_SE2_estimate, stamp);
 
-  //
+  transform_broadcaster.sendTransform(msg);
 
-  //map_publisher = n.advertise<nav_msgs::Odometry>("map/odometry", 100);
-  //fix_publisher = n.advertise<sensor_msgs::NavSatFix>("map/fix", 100);
-  //observe_publisher = n.advertise<sensor_msgs::NavSatFix>("map/raw_fix", 100);
 }
+
+

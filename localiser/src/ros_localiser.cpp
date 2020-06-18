@@ -30,7 +30,6 @@ int main(int argc, char** argv) {
 // create the localiser modules
 ROSLocaliser::ROSLocaliser() :
     bag_input(std::make_shared<BagInput>()),
-    bag_output(std::make_shared<BagOutput>()),
     publisher(std::make_shared<Publisher>()),
     localiser_input(std::make_shared<LocaliserInput>()),
     localiser_output(std::make_shared<LocaliserOutput>()),
@@ -51,6 +50,7 @@ ROSLocaliser::ROSLocaliser() :
 
   // output method: publish output or write to bag
   ros::param::param<std::string>("~output_bag", output_bag, "");
+  bag_output = std::make_shared<BagOutput>(output_bag);
 
   // input method: from subscriber or rosbag play
   ros::param::param<std::string>("~input_bag", input_bag, "");

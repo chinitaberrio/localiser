@@ -21,9 +21,7 @@ LinearFilter::LinearFilter()
   confidence = 1.;
   initialised_filter = false;
 
-//  state << 0., 0., 0.;
   state_odom_only << 0., 0., 0.;
-//  state_var << 0., 0., 0., 0., 0., 0., 0., 0., 0.;
 
 }
 
@@ -44,7 +42,33 @@ LinearFilter::BoundHeading(const Eigen::Vector3d &current_state, Eigen::Vector3d
 
 
 
+bool
+PredictStep::condition(StateEstimate &prior) {
 
+
+  //    Perform the prediction step of the EKF
+  //    Update the mean and covariance, append the results to the state_history
+
+  // apply transition model to predict current mean
+  posterior.mean = motion_model(prior.mean, motion.mean);
+
+  // determine the transition matrix function
+  Eigen::MatrixXd F = transition_matrix_fn(posterior.mean, motion.mean);
+  Eigen::MatrixXd G = jacobian_matrix_fn(posterior.mean, motion.mean);
+
+  Eigen::MatrixXd P = prior.covariance;
+  Eigen::MatrixXd Q = motion.noise;
+
+  // TODO: work out when there is no input?
+  // Update the covariances depending on whether there is an input or not
+  // if (min(G.shape) > 0)
+  posterior.covariance = F * P * F.transpose() + G * Q * G.transpose();
+  // else
+  //   var = F * P * F.transpose();
+
+  // todo: are there any conditions where the predict should fail ?
+  return true;
+}
 
 
 bool
@@ -133,8 +157,6 @@ UpdateStep::CalculateConsensus(float consensus_window, std::deque<std::shared_pt
 
   // rerun the filter for the window using the update to bypass invalid samples.
 }
-
-
 
 
 bool
@@ -459,7 +481,7 @@ PositionHeadingEKF::test_update() {
 
 
 Eigen::Vector3d
-PositionHeadingEKF::vehicle_model(const Eigen::Vector3d &mean, const Eigen::Vector2d &input_state){
+PositionHeadingEKF::vehicle_model(const Eigen::Vector3d &mean, const Eigen::Vector3d &input_state){
   /*
   Vehicle transition model.
 
@@ -477,7 +499,7 @@ PositionHeadingEKF::vehicle_model(const Eigen::Vector3d &mean, const Eigen::Vect
   Eigen::Vector3d posterior;
 
   // av_heading is the average heading for the time period
-  double av_heading = mean[2] + (input_state[1] / 2.);
+  double av_heading = mean[2] + (input_state[2] / 2.);
 
   posterior[0] = mean[0] + input_state[0] * cos(av_heading);
   posterior[1] = mean[1] + input_state[0] * sin(av_heading);
@@ -488,16 +510,8 @@ PositionHeadingEKF::vehicle_model(const Eigen::Vector3d &mean, const Eigen::Vect
 
 
 
-Eigen::VectorXd
-PositionHeadingEKF::observation_model(const Eigen::VectorXd state, const Eigen::VectorXd observation){
-  // returns the observation model
-  return observation;
-}
-
-
-
 Eigen::Matrix3d
-PositionHeadingEKF::transition_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state) {
+PositionHeadingEKF::transition_matrix_fn(Eigen::Vector3d mean, Eigen::Vector3d increment) {
   /*
     generate covariance transition matrix
     mean[x, y, theta]
@@ -506,8 +520,8 @@ PositionHeadingEKF::transition_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d i
   Eigen::MatrixXd transition_matrix = Eigen::MatrixXd::Identity(3, 3);
 
   // parameters used in the transition matrix
-  double delta_p = input_state[0];
-  double delta_theta = input_state[1];
+  double delta_p = std::hypot(increment[0], increment[1]);
+  double delta_theta = increment[2];
   double theta = mean[2];
 
   double av_heading = theta + (delta_theta / 2.0);
@@ -636,296 +650,108 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
 
     update_step->CalculateConsensus(3.5, states);
 
-    if (update_step->condition(prior)) {
-
-      //  if (publish_statistics) {
-      publish_statistics(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source);
-//  }
-
-    }
-    else {
-      std::string source_bad = source + "-bad";
-      publish_statistics(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source_bad);
+    if (publish_statistics) {
+        if (update_step->condition(prior)) {
+          publish_statistics(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source);
+        }
+        else {
+          std::string source_bad = source + "-bad";
+          publish_statistics(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source_bad);
+        }
     }
 
     states.push_back(update_step);
   }
-
-  /*
-  if (!initialised) {
-    if (previous_speed > MINIMUM_INITIALISATION_SPEED) {
-
-
-      std::shared_ptr<UpdateStep> update_step = std::make_shared<UpdateStep>();
-      states.push_back(update_step);
-
-      update_step->posterior.mean = observation;
-      update_step->posterior.covariance = covariance;
-
-      update_step->observation.mean = observation;
-      update_step->observation.noise = covariance;
-
-      update_step->valid_individual = true;
-      update_step->valid_sequence = false;
-      update_step->stamp = stamp;
-    }
-  }
-  else {
-    // The observations are generally older than the latest relative motion estimate
-    //float delta_time = (stamp - prior_stamp).toSec();
-    //predict(motion * delta_time, covariance);
-
-    StateEstimate &prior = states.back()->posterior;
-    BoundHeading(prior.mean, observation);
-
-    // The observations are generally older than the latest relative motion estimate
-    //float delta_time = (stamp - prior_stamp).toSec();
-    //predict(motion * delta_time, covariance);
-
-
-    std::shared_ptr<UpdateStep> update_step = std::make_shared<UpdateStep>();
-
-    update_step->observation.mean = observation;
-    update_step->observation.noise = covariance;
-
-    //obs->prior = states.back().posterior;
-    BoundHeading(prior.mean, update_step->observation.mean);
-
-    update_step->valid_individual = true;
-    update_step->valid_sequence = false;
-    update_step->stamp = stamp;
-
-    // Override covariance with fixed values
-    //Eigen::Matrix2d R; // observation noise
-
-    // calculate noise R
-    update_step->observation.noise << POSITION_ERROR, 0., 0.,
-        0., POSITION_ERROR, 0.,
-        0., 0., HEADING_ERROR;
-
-    update_step->observation.noise = update_step->observation.noise.array().square();
-
-    update_step->observation.observation_matrix = Eigen::MatrixXd::Identity(3,3);
-     //   Eigen::MatrixXd H = Eigen::MatrixXd::Identity(3,3);
-
-    if (update_step->condition(prior)) {
-      states.push_back(update_step);
-    }
-
-  }
-  */
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Eigen::Vector3d
-PositionOnlyEKF::vehicle_model(const Eigen::Vector3d &mean, const Eigen::Vector2d &input_state){
-  /*
-  Vehicle transition model.
-
-  Transition function for the vehicle model
-
-      Args:
-      mean (array): state [x (meters),
-      y (meters),
-      heading (radians)]
-
-  input_state (array): [delta_position (meters),
-      delta_heading (radians)]
-  */
-
-  Eigen::Vector3d posterior;
-
-  // av_heading is the average heading for the time period
-  double av_heading = mean[2] + (input_state[1] / 2.);
-
-  posterior[0] = mean[0] + input_state[0] * cos(av_heading);
-  posterior[1] = mean[1] + input_state[0] * sin(av_heading);
-  posterior[2] = mean[2] + input_state[1];
-
-  return posterior;
-}
-
-
-
-Eigen::VectorXd
-PositionOnlyEKF::observation_model(const Eigen::VectorXd state, const Eigen::VectorXd observation){
-  // returns the observation model
-  Eigen::VectorXd partial_observation;
-  partial_observation << observation[0], observation[1];
-  return partial_observation;
-}
-
-
-
-Eigen::Matrix3d
-PositionOnlyEKF::transition_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state) {
-  /*
-    generate covariance transition matrix
-    mean[x, y, theta]
-    input_state[delta_p, delta_theta]
-  */
-  Eigen::MatrixXd transition_matrix = Eigen::MatrixXd::Identity(3, 3);
-
-  // parameters used in the transition matrix
-  double delta_p = input_state[0];
-  double delta_theta = input_state[1];
-  double theta = mean[2];
-
-  double av_heading = theta + (delta_theta / 2.0);
-
-  transition_matrix(0,2) = -1.0 * delta_p * sin(av_heading);
-//# transition_matrix[1][2] = -1.0 * delta_p * math.cos(av_heading)
-  transition_matrix(1,2) = delta_p * cos(av_heading);
-
-  return transition_matrix;
-}
-
-
-
-Eigen::MatrixXd
-PositionOnlyEKF::jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state) {
-  /*
-    generate jacobian matrix
-        mean[x, y, theta]
-        input_state[delta_p, delta_theta]
-
-        This is the linearisation of the vehicle model for the input parameters
-  */
-
-  Eigen::MatrixXd jacobian_mat = Eigen::MatrixXd::Zero(3, 2);
-
-  // parameters used in the jacobian
-  auto delta_p = input_state[0];
-  auto delta_theta = input_state[1];
-  auto theta = mean[2];
-
-  // 0.5 is included as d/dx cos(0.5x) = -0.5sin(0.5x)
-
-  // partial derivatives
-  // delta_p w.r.t. x
-  jacobian_mat(0,0) = cos(theta + 0.5 * delta_theta);
-  //  print ("recalculate the off diagonal jacobians")
-  // delta_theta w.r.t. x
-  jacobian_mat(0,1) = (-0.5 * delta_p * cos(theta) * sin(0.5 * delta_theta) -
-                       0.5 * delta_p * sin(theta) * cos(0.5 * delta_theta));
-
-  // delta_p w.r.t. y
-  // jacobian_mat[1][0] = -1.0 * math.sin(theta + 0.5 * delta_theta)
-  jacobian_mat(1,0) = sin(theta + 0.5 * delta_theta);
-
-  // delta_theta w.r.t. y
-  jacobian_mat(1,1) = (-0.5 * delta_p * cos(theta) * cos(0.5 * delta_theta) +
-                       0.5 * delta_p * sin(theta) * sin(0.5 * delta_theta));
-
-  // delta_p w.r.t. theta
-  jacobian_mat(2,0) = 0;
-
-  // delta_theta w.r.t. theta
-  jacobian_mat(2,1) = 0.5;
-
-  return jacobian_mat;
-}
-
-
+//! Perform the optimisation
 void
-PositionOnlyEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp, std::string &source) {
+PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3d& increment_cov, ros::Time stamp) {
 
-  if (!initialised) {
-    if (previous_speed > MINIMUM_INITIALISATION_SPEED) {
+    Eigen::Vector2d delta_state_change;
+    delta_state_change << std::hypot(increment[0], increment[1]), increment[2];
+    state_odom_only = vehicle_model(state_odom_only, delta_state_change);
 
-      // Add directly, this is the initialisation of the filter, so it is definitely considered valid
-      std::shared_ptr<UpdateStep> update_step = std::make_shared<UpdateStep>();
-      states.push_back(update_step);
+  if (signal_odom_state) {
+    Eigen::Matrix3d odom_uncertainty;
 
-      update_step->posterior.mean = observation;
-      update_step->posterior.covariance = covariance;
+    odom_uncertainty << 0., 0., 0.,
+                        0., 0., 0.,
+                        0., 0., 0.;
 
-      update_step->observation.mean = observation;
-      update_step->observation.noise = covariance;
-
-      update_step->valid_individual = true;
-      update_step->valid_sequence = false;
-      update_step->stamp = stamp;
-
-      initialised = true;
-    }
+    signal_odom_state(state_odom_only, odom_uncertainty, stamp);
   }
-  else {
-    // The observations are generally older than the latest relative motion estimate
-    //float delta_time = (stamp - prior_stamp).toSec();
-    //predict(motion * delta_time, covariance);
+
+  if (initialised) {
+
     StateEstimate &prior = states.back()->posterior;
-    std::shared_ptr<UpdateStep> update_step = std::make_shared<UpdateStep>();
-    update_step->observation.mean = observation;
-    update_step->observation.noise = covariance;
 
-    //obs->prior = states.back().posterior;
-    BoundHeading(prior.mean, update_step->observation.mean);
+    std::shared_ptr<PredictStep> predict_step = std::make_shared<PredictStep>();
 
-    update_step->valid_individual = true;
-    update_step->valid_sequence = false;
-    update_step->stamp = stamp;
+    using std::placeholders::_1;
+    using std::placeholders::_2;
+    predict_step->motion_model = std::bind(&PositionHeadingEKF::vehicle_model, this, _1, _2);
+    predict_step->transition_matrix_fn = std::bind(&PositionHeadingEKF::transition_matrix_fn, this, _1, _2);
+    predict_step->jacobian_matrix_fn = std::bind(&PositionHeadingEKF::jacobian_matrix_fn, this, _1, _2);
+    states.push_back(predict_step);
 
-    // Override covariance with fixed values
-    Eigen::Matrix2d R; // observation noise
+    predict_step->stamp = stamp;
+//    predict_step->valid_flag = true;
+    predict_step->valid_individual = true;
+    predict_step->valid_sequence = true;
 
-    // calculate noise R
-    R << POSITION_ERROR, 0.,
-        0., POSITION_ERROR;
+    predict_step->motion.mean << std::hypot(increment[0], increment[1]), increment[2];
 
-    R = R.array().square();
+    //Eigen::Matrix2d Q; //process noise
+    predict_step->motion.noise << VELOCITY_NOISE, 0.,
+        0., YAWRATE_NOISE;
 
-    update_step->observation.noise = R;
-
-//    Eigen::MatrixXd H = Eigen::MatrixXd(2,3);
-    update_step->observation.observation_matrix = Eigen::MatrixXd(2,3);
-    update_step->observation.observation_matrix << 1., 0., 0.,
-         0., 1., 0.;
-
+    predict_step->motion.noise *= delta_time;
+    predict_step->motion.noise = predict_step->motion.noise.array().square();
 
     // generate a linked list of predict steps
-    if (last_update) {
-      last_update->next = update_step;
-      update_step->prev = last_update;
+    if (last_predict) {
+      last_predict->next = predict_step;
+      predict_step->prev = last_predict;
     }
 
-    last_update = update_step;
+    last_predict = predict_step;
 
-    update_step->CalculateConsensus(3.5, states);
 
-    if (update_step->condition(prior)) {
 
-      //  if (publish_statistics) {
-      publish_statistics(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source);
-//  }
+        //predict(delta_state_change, Q);
+    predict_step->condition(prior);
 
-    }
-    states.push_back(update_step);
+    //ROS_INFO_STREAM("predict " << predict_step->posterior.mean);
+
+    /*
+       force the odom filter to use the absolute heading estimate - the odom source should be continuous
+       in position but not in heading - the drifting of the baselink in the odom frame can only be
+       in position. if there was an angular offset between the map->odom, this rotation
+       could only be applied to the base_link directly
+    */
+
+    state_odom_only[2] = predict_step->posterior.mean[2];
+
+
   }
+
+  if (signal_map_state){
+    signal_map_state(predict_step->posterior.mean, predict_step->posterior.covariance, stamp);
+  }
+
+  if (signal_statistics){
+    publish_stats();
+  }
+
+  //prior_motion.mean = motion;
+  //prior_motion_covariance = covariance;
+  //prior_motionprior_stamp = stamp;
+
+  // todo: replace this with the last predict step motion
+  previous_speed = motion[0];
 }
-
-
-
-
-
 
 
 

@@ -19,7 +19,6 @@ void MotionModel::receive_yaw_rate(double yaw_rate, double variance, ros::Time s
 }
 
 
-
 void MotionModel::calculate_pose_increment(ros::Time stamp) {
   if (signal_prediction) {
 
@@ -68,9 +67,10 @@ MotionModel::vehicle_model(double distance_travelled, double delta_heading){
 
   Eigen::Vector3d posterior_in_prior_frame;
 
-  // av_heading is the average heading for the time period
+  // polar coordinate of new position(distance_travelled, av_heading = delta_heading / 2), heading = delta_heading
   double av_heading = delta_heading / 2.;
 
+  // convert polar position to cartesian position
   posterior_in_prior_frame[0] =  distance_travelled * cos(av_heading);
   posterior_in_prior_frame[1] =  distance_travelled * sin(av_heading);
   posterior_in_prior_frame[2] =  delta_heading;
