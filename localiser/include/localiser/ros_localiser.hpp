@@ -34,25 +34,32 @@ public:
 
   void Initialise();
 
-  std::shared_ptr<BagInput> bag_input;
-  std::shared_ptr<BagOutput> bag_output;
-  std::shared_ptr<Publisher> publisher;
+  std::shared_ptr<BagSource> bag_source;
 
-  std::shared_ptr<LocaliserInput> localiser_input;
-  std::shared_ptr<LocaliserOutput> localiser_output;
 
-  std::shared_ptr<PointCloudFeaturesPipeline> features_pipeline;
-  std::shared_ptr<ICPMatcherPipeline> icp_pipeline;
 
-  std::shared_ptr<ImuMeasurement> imu;
-  std::shared_ptr<SpeedMeasurement> speed;
+
 
   std::shared_ptr<ICPObservation> map_icp;
   std::shared_ptr<GNSSObservation> gnss;
+  std::shared_ptr<PointcloudObservation> pointcloud;
+
+
+  std::shared_ptr<MotionModel> ekf_motion_model;
+
+
+
 
   std::shared_ptr<GraphOptimiser> graph_optimiser;
 //  std::shared_ptr<GtsamOptimiser> gtsam_optimiser;
-  std::shared_ptr<PositionHeadingEKF> linear_filter;
+  std::shared_ptr<PositionHeadingEKF> ekf;
+
+
+  std::shared_ptr<BagDestination> bag_destination;
+  std::shared_ptr<Publisher> publisher;
+
+
+
 
   ros::ServiceServer service;
 
@@ -62,8 +69,8 @@ public:
 
 
   bool run_pipeline;
-  std::string output_bag;
-  std::string input_bag;
+  std::string output_bag_name;
+  std::string input_bag_name;
 
 
 };

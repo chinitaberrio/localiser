@@ -16,31 +16,31 @@
 
 
 
-BagOutput::BagOutput() {
+BagDestination::BagDestination() {
 
   bag = std::make_shared<rosbag::Bag>();
   bag->open(bag_file, rosbag::bagmode::Write);
 
 }
 
-BagOutput::~BagOutput() {
+BagDestination::~BagDestination() {
   bag->close();
 }
 
 
-void BagOutput::write_stats(std::string &topic_name, Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
+void BagDestination::write_stats(Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
                               Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time &stamp, std::string &source){
 
   if (bag->isOpen()){
-    auto msg = receive_stats2msg(topic_name, observation, innovation,
+    auto msg = receive_stats2msg(observation, innovation,
                                  covariance, confidence, stamp, source);
 
-    bag->write(topic_name, stamp, msg);
+    bag->write("Statistics", stamp, msg);
   }
 }
 
 
-void BagOutput::write_odom_SE2_msg(std::string &frame_id, std::string &topic_name, Eigen::Vector3d &SE2_estimate,
+void BagDestination::write_odom_SE2_msg(std::string &frame_id, std::string &topic_name, Eigen::Vector3d &SE2_estimate,
                                    Eigen::Matrix3d &covariance, ros::Time &stamp) {
 
     if (bag->isOpen()){
@@ -53,7 +53,7 @@ void BagOutput::write_odom_SE2_msg(std::string &frame_id, std::string &topic_nam
 }
 
 
-void BagOutput::write_map_odom_tf_msg(Eigen::Vector3d &map_SE2_estimate, ros::Time &stamp) {
+void BagDestination::write_map_odom_tf_msg(Eigen::Vector3d &map_SE2_estimate, ros::Time &stamp) {
 
   auto msg = receive_map_tf2msg(map_SE2_estimate, stamp);
 
@@ -62,7 +62,7 @@ void BagOutput::write_map_odom_tf_msg(Eigen::Vector3d &map_SE2_estimate, ros::Ti
   }
 }
 
-void BagOutput::write_odom_tf_msg(Eigen::Vector3d &odom_SE2_estimate, ros::Time &stamp) {
+void BagDestination::write_odom_tf_msg(Eigen::Vector3d &odom_SE2_estimate, ros::Time &stamp) {
 
   auto msg = receive_odom_tf2msg(odom_SE2_estimate, stamp);
 

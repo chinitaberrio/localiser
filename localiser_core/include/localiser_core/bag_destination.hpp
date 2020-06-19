@@ -20,12 +20,12 @@ namespace rosbag {
  *
  */
 
-class BagOutput : public DestinationInterface{
+class BagDestination : public DestinationInterface{
 public:
-  BagOutput();
-  ~BagOutput();
+  BagDestination();
+  ~BagDestination();
 
-  void write_stats(std::string topic_name, Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
+  void write_stats(Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
                                 Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time &stamp, std::string &source);
 
   void write_odom_SE2_msg(std::string &frame_id, std::string &topic_name, Eigen::Vector3d &SE2_estimate,

@@ -21,22 +21,8 @@ BagSource::BagSource(){
     odom_msg_reset_count = 10./FREQENCY;
 
 
-
 }
 
-
-/*
-void BagOutput::publish_odom(nav_msgs::Odometry &msg, std::string topic_name) {
-  if (bag.isOpen())
-    bag.write(topic_name, msg.header.stamp, msg);
-}
-
-
-void BagOutput::publish_fix(sensor_msgs::NavSatFix &msg, std::string topic_name) {
-  if (bag.isOpen())
-    bag.write(topic_name, msg.header.stamp, msg);
-}
-*/
 
 
 void BagSource::MessagePublisher(ros::Publisher &publisher, const rosbag::MessageInstance &message) {

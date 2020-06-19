@@ -8,7 +8,7 @@
 
 
 
-void Publisher::publish_odom(std::string &frame_id, std::string &topic_name, Eigen::Vector3d &SE2_estimate,
+void Publisher::write_odom_SE2_msg(std::string &frame_id, std::string &topic_name, Eigen::Vector3d &SE2_estimate,
                              Eigen::Matrix3d &covariance, ros::Time &stamp) {
 
 
@@ -25,14 +25,14 @@ void Publisher::publish_odom(std::string &frame_id, std::string &topic_name, Eig
 }
 
 
-void Publisher::publish_stats(std::string &topic_name, Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
+void Publisher::write_stats(Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
                               Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time &stamp, std::string &source) {
 
 
     ros::NodeHandle n;
-    pub = n.advertise<dataset_tools::LocaliserStats>(topic_name, 100);
+    pub = n.advertise<dataset_tools::LocaliserStats>("Statistics", 100);
 
-    auto msg = receive_stats2msg(topic_name, observation, innovation,
+    auto msg = receive_stats2msg(observation, innovation,
                                  covariance, confidence, stamp, source);
 
     pub.publish(msg);
@@ -43,7 +43,7 @@ void Publisher::publish_stats(std::string &topic_name, Eigen::Vector3d &observat
 
 
 void
-Publisher::publish_map_odom_tf(Eigen::Vector3d &map_SE2_estimate, ros::Time &stamp) {
+Publisher::write_map_odom_tf_msg(Eigen::Vector3d &map_SE2_estimate, ros::Time &stamp) {
 
   auto msg = receive_map_tf2msg(map_SE2_estimate, stamp);
 
@@ -53,12 +53,10 @@ Publisher::publish_map_odom_tf(Eigen::Vector3d &map_SE2_estimate, ros::Time &sta
 
 
 void
-Publisher::publish_odom_tf(Eigen::Vector3d &odom_SE2_estimate, ros::Time &stamp) {
+Publisher::write_odom_tf_msg(Eigen::Vector3d &odom_SE2_estimate, ros::Time &stamp) {
 
   auto msg = receive_odom_tf2msg(odom_SE2_estimate, stamp);
 
   transform_broadcaster.sendTransform(msg);
 
 }
-
-

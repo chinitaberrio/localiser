@@ -32,7 +32,6 @@ class ObservationModel {
 public:
   ObservationModel();
 
-  //! Perform the prediction
   std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, std::string&, ros::Time)> signal_update;
 
 
@@ -85,6 +84,30 @@ private:
   const double HEADING_COVARIANCE = pow(0.1, 2); // heading standard deviation is set to 0.1m
 };
 
+
+// PointcloudObservation do not need signal_update function pointer
+// its output is ICP msgs, signals go thru SourceInterface receive_odom_SE2_msg() method
+class PointcloudObservation{
+public:
+  PointcloudObservation(std::shared_ptr<BagSource> &bag_source) {
+
+      features_pipeline = std::make_shared<PointCloudFeaturesPipeline>();
+      icp_pipeline = std::make_shared<ICPMatcherPipeline>();
+
+      features_pipeline->publish_poles_corners = std::bind(&ICPMatcherPipeline::receive_message, &(*icp_pipeline),
+                                                         std::placeholders::_1, std::placeholders::_2);
+
+      icp_pipeline->publish_pose = std::bind(&BagSource::receive_odom_SE2_msg, &(*bag_source), std::placeholders::_1);
+  }
+
+  void receive_pointcloud(const sensor_msgs::NavSatFix::ConstPtr& pc_msg) {
+        features_pipeline->receive_message(pc_msg);
+  }
+
+  std::shared_ptr<PointCloudFeaturesPipeline> features_pipeline;
+  std::shared_ptr<ICPMatcherPipeline> icp_pipeline;
+
+};
 
 
 

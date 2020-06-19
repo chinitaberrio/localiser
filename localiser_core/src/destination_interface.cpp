@@ -8,7 +8,7 @@ DestinationInterface::DestinationInterface()
 
 
 dataset_tools::LocaliserStats
-BagOutput::receive_stats2msg(std::string topic_name, Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
+BagOutput::receive_stats2msg(Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
             Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time stamp, std::string &source){
 
 

@@ -650,18 +650,20 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
 
     update_step->CalculateConsensus(3.5, states);
 
-    if (publish_statistics) {
+    if (signal_statistics) {
         if (update_step->condition(prior)) {
-          publish_statistics(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source);
+          signal_statistics(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source);
         }
         else {
           std::string source_bad = source + "-bad";
-          publish_statistics(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source_bad);
+          signal_statistics(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source_bad);
         }
     }
 
     states.push_back(update_step);
   }
+
+  last_source = std::make_shared<std::string>(source);
 }
 
 
@@ -742,7 +744,10 @@ PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3
   }
 
   if (signal_statistics){
-    publish_stats();
+      Eigen::Vector3d innovation;
+      innovation << 0., 0., 0.;
+
+      signal_statistics(predict_step->posterior.mean, innovation, predict_step->posterior.covariance, innovation, stamp, last_source);
   }
 
   //prior_motion.mean = motion;

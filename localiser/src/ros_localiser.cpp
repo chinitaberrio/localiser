@@ -29,16 +29,14 @@ int main(int argc, char** argv) {
 
 // create the localiser modules
 ROSLocaliser::ROSLocaliser() :
-    bag_input(std::make_shared<BagInput>()),
-    publisher(std::make_shared<Publisher>()),
-    localiser_input(std::make_shared<LocaliserInput>()),
-    localiser_output(std::make_shared<LocaliserOutput>()),
-    imu(std::make_shared<ImuMeasurement>()),
-    speed(std::make_shared<SpeedMeasurement>()),
+    bag_source(std::make_shared<BagSource>()),
+    ekf_motion_model(std::make_shared<MotionModel>()),
     map_icp(std::make_shared<ICPObservation>()),
     gnss(std::make_shared<GNSSObservation>()),
     graph_optimiser(std::make_shared<GraphOptimiser>()),
-    linear_filter(std::make_shared<PositionHeadingEKF>()){
+    ekf(std::make_shared<PositionHeadingEKF>()),
+    publisher(std::make_shared<Publisher>())
+{
 
 
   ros::NodeHandle n;
@@ -49,11 +47,13 @@ ROSLocaliser::ROSLocaliser() :
   ros::param::param<bool>("~run_pipeline", run_pipeline, false);
 
   // output method: publish output or write to bag
-  ros::param::param<std::string>("~output_bag", output_bag, "");
-  bag_output = std::make_shared<BagOutput>(output_bag);
+  ros::param::param<std::string>("~output_bag", output_bag_name, "");
+  bag_destination = std::make_shared<BagDestination>(output_bag_name);
+
+  pointcloud = std::make_shared<PointcloudObservation>(bag_source); // pointcloud signals bag_souce's receive ICP function
 
   // input method: from subscriber or rosbag play
-  ros::param::param<std::string>("~input_bag", input_bag, "");
+  ros::param::param<std::string>("~input_bag", input_bag_name, "");
 
 }
 
@@ -118,180 +118,117 @@ bool status
 
 
 void
-ROSLocaliser::Initialise() {
+ROSLocaliser::connect_layers() {
+
+    using namespace std::placeholders;
 
 
     /*********************************************************
-    *  topics to use and input sources connect to the ROSInput
+     * connect the source interface layer
+     *
+    *  slots: ros topics or bag topics to use
+    *  signals: to motion/observation models
     */
 
-    if (input_bag.empty()) {
+    std::vector<ros::Subscriber> subscribers;
+    if (input_bag_name.empty()) {
     ROS_INFO_STREAM("[INPUT] Subscribing to topics");
     // subscribe
-    std::vector<ros::Subscriber> subscribers;
 
     ros::NodeHandle n;
-    subscribers.push_back(n.subscribe("/vn100/imu", 1000, &ImuMeasurement::receive_message, &(*imu)));
-    subscribers.push_back(n.subscribe("/ublox_gps/fix", 1000, &GNSSObservation::receive_message, &(*gnss)));
-    subscribers.push_back(n.subscribe("/zio/odometry/rear", 1000, &SpeedMeasurement::receive_message, &(*speed)));
-    subscribers.push_back(n.subscribe("/velodyne/front/poles/average", 1000, &ICPObservation::receive_message, &(*map_icp)));
+    subscribers.push_back(n.subscribe("/vn100/imu", 1000, &BagSource::receive_IMU_msg, &(*bag_source)));
+    subscribers.push_back(n.subscribe("/ublox_gps/fix", 1000, &BagSource::receive_fix_msg, &(*bag_source)));
+    subscribers.push_back(n.subscribe("/zio/odometry/rear", 1000, &BagSource::receive_odom_speed_msg, &(*bag_source)));
+    subscribers.push_back(n.subscribe("/localisation/icp/icp_matcher/odom_corrected", 1000, &BagSource::receive_odom_SE2_msg, &(*bag_source)));
 
     //todo: make a list of topics for each type of message
     //todo: in the localiser_input/output set the bind/unbind as required
 
-    // Spin and read messages forever
-    ros::spin();
-    }
-    else {
-        ROS_INFO_STREAM("[INPUT] Reading data from bagfile" << input_bag);
+
+    }else {
+        ROS_INFO_STREAM("[INPUT] Reading data from bagfile" << input_bag_name);
 
         // odometry update messages (i.e. from ICP)
-        // bag_input.odom_update_topics.insert("/localisation/gnss/utm")
+        // bag_source.odom_SE2_topics.insert("/localisation/gnss/utm")
 
         // GNSS fix messages
-        bag_input->fix_update_topics.insert("/ublox_gps/fix");
-        bag_input->fix_update_topics.insert("ibeo/gnss");
+        bag_source->fix_topics.insert("/ublox_gps/fix");
+//        bag_source->fix_topics.insert("ibeo/gnss");
 
         // speed odometry messages
-        bag_input->odom_speed_topics.insert("/zio/odometry/rear");
-        bag_input->odom_speed_topics.insert("/vn100/odometry");
-        bag_input->odom_speed_topics.insert("ibeo/odometry");
+        bag_source->odom_speed_topics.insert("/zio/odometry/rear");
+//        bag_source->odom_speed_topics.insert("/vn100/odometry");
+//        bag_source->odom_speed_topics.insert("ibeo/odometry");
 
         // imu topics
-        bag_input->imu_topics.insert("/vn100/imu");
-        bag_input->imu_topics.insert("xsens/IMU");
+        bag_source->imu_topics.insert("/vn100/imu");
+//        bag_source->imu_topics.insert("xsens/IMU");
 
         // point_cloud topics
-        bag_input->pointcloud_topics.insert("/velodyne/front/points");
+        bag_source->pointcloud_topics.insert("/velodyne/front/points");
 
         // bind bag input functions to appropriate message handlers
-        bag_input->publish_odom_update = std::bind(&ICPObservation::receive_message, &(*map_icp), std::placeholders::_1);
-        bag_input->publish_speed_update = std::bind(&SpeedMeasurement::receive_message, &(*speed), std::placeholders::_1);
-        bag_input->publish_fix_update = std::bind(&GNSSObservation::receive_message, &(*gnss), std::placeholders::_1);
-        bag_input->publish_imu_update = std::bind(&ImuMeasurement::receive_message, &(*imu), std::placeholders::_1);
 
-        if (run_pipeline) {
+        // to observation models
+        bag_source->signal_pointcloud_msg = std::bind(&PointcloudObservation::receive_pointcloud_msg, &(*pointcloud), _1);
+        bag_source->signal_SE2 = std::bind(&ICPObservation::receive_icp, &(*map_icp), _1, _2, _3, _4 );
 
-            // todo: make this conditional on doing the point cloud feature pipeline
-            features_pipeline = std::make_shared<PointCloudFeaturesPipeline>();
-            bag_input->publish_pointcloud_update = std::bind(&PointCloudFeaturesPipeline::receive_message,
-                                                           &(*features_pipeline), std::placeholders::_1);
+        bag_source->signal_lat_lon = std::bind(&GNSSObservation::receive_gps, &(*gnss), _1, _2, _3, _4, _5 );
 
-            // todo: make this conditional on doing the ICP matching
-            icp_pipeline = std::make_shared<ICPMatcherPipeline>();
-            features_pipeline->publish_poles_corners = std::bind(&ICPMatcherPipeline::receive_message, &(*icp_pipeline),
-                                                               std::placeholders::_1, std::placeholders::_2);
 
-            icp_pipeline->publish_pose = std::bind(&ICPObservation::receive_message, &(*map_icp), std::placeholders::_1);
-        }
-
+        // to motion models
+        bag_source->signal_speed = std::bind(&MotionModel::receive_speed, &(*ekf_motion_model), _1, _2, _3);
+        bag_source->signal_yaw_rate = std::bind(&MotionModel::receive_yaw_rate, &(*ekf_motion_model), _1, _2, _3);
+        bag_source->signal_pitch = std::bind(&MotionModel::receive_pitch, &(*ekf_motion_model), _1, _2, _3);
+        // We want the prediction calculation to be run whenever the IMU gives a msg (100Hz)
+        bag_source->signal_calculation = std::bind(&MotionModel::calculate_pose_increment, &(*ekf_motion_model), _1);
     }
 
 
 
     /*********************************************************
-     *  connect the ROSInput layer to the localiser input layer
+     *  connect the motion/observation models layer to the localiser kernel layer
      */
 
-    // bind update method
-    // initial state is gnss localisation. will switch to map based localisation if behavior tree sees fit
-    // map_icp->perform_update is an empty std::function(not initialized)
-  //  map_icp->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-    gnss->perform_update = std::bind(&LocaliserInput::Update, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+    {
+        // bind update method
+        // initial state is gnss localisation. will switch to map based localisation if behavior tree sees fit
+        gnss->signal_update = std::bind(&PositionHeadingEKF::AddAbsolutePosition, ekf, _1, _2, _3, _4 );
+        map_icp->signal_update = std::bind(&PositionHeadingEKF::AddAbsolutePosition, ekf, _1, _2, _3, _4 );
 
-    // bind set variables
-    imu->update_pitch = std::bind(&LocaliserInput::SetPitch, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    imu->update_yaw_rate = std::bind(&LocaliserInput::SetYawRate, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    speed->update_speed = std::bind(&LocaliserInput::SetSpeed, localiser_input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        ekf_motion_model->signal_prediction = std::bind(&PositionHeadingEKF::AddRelativeMotion, ekf, _1, _2, _3);
 
-    // We want the prediction step to be run whenever the IMU gives a msg (100Hz)
-    imu->perform_prediction = std::bind(&LocaliserInput::Predict, localiser_input, std::placeholders::_1);
-
-
+    }
 
 
     /*********************************************************
-     *  connect the localiser input to the localiser layer,
-     *  and the localiser layer to the ROSOutput layer
+     *  connect the localiser kernel layer to the destination interface layer
      */
 
-    // run using gtsam or graph optimizer
-    if (0) {
-      /*
-      // bind localisation method inputs
-      // gtsam_optimiser = std::make_shared<GtsamOptimiser>();
-      // localiser_input->perform_update = std::bind(&GtsamOptimiser::AddAbsolutePosition, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-      // localiser_input->perform_prediction = std::bind(&GtsamOptimiser::AddRelativeMotion, gtsam_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-      //
-      // where to send localisation method outputs
-      // gtsam_optimiser->publish_odometry = std::bind(&LocaliserOutput::PublishOdometry, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-      */
-    }
-    else if(false){
-      // bind localisation method inputs
-      localiser_input->perform_update = std::bind(&GraphOptimiser::AddAbsolutePosition, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-      localiser_input->perform_prediction = std::bind(&GraphOptimiser::AddRelativeMotion, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    // connect publishers
+    {
+        ekf->signal_odom_state.push_back(std::bind(&Publisher::write_odom_SE2_msg, bag_destination, "odom", "Odometry", _1, _2, _3));
+        ekf->signal_odom_state.push_back(std::bind(&Publisher::write_odom_tf_msg, bag_destination,  _1, _3));
 
-      // where to send localisation method outputs
-      graph_optimiser->publish_odometry = std::bind(&LocaliserOutput::PublishOdometry, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-      graph_optimiser->publish_map = std::bind(&LocaliserOutput::PublishMap, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-    }
-    else if(false){
-      // DO WITHOUT SAVING YET TO THE FILE
-      // bind localisation method inputs
-      localiser_input->perform_update = std::bind(&GraphOptimiser::AddAbsolutePosition, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-      localiser_input->perform_prediction = std::bind(&GraphOptimiser::AddRelativeMotion, graph_optimiser, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        // publish map odometry msg - necessary if doing ICP matching
+        ekf->signal_map_state.push_back(std::bind(&Publisher::write_odom_SE2_msg, bag_destination, "utm", "UTM" _1, _2, _3));
+        ekf->signal_map_state.push_back(std::bind(&Publisher::write_map_odom_tf_msg, bag_destination,  _1, _3));
 
-      graph_optimiser->run_optimiser_each_observation = false;
-    }
-    else {
-
-      localiser_input->perform_update = std::bind(&LinearFilter::AddAbsolutePosition, linear_filter, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-      localiser_input->perform_prediction = std::bind(&LinearFilter::AddRelativeMotion, linear_filter, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-
-      // where to send localisation method outputs
-      linear_filter->publish_odometry = std::bind(&LocaliserOutput::PublishOdometry, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-      linear_filter->publish_map = std::bind(&LocaliserOutput::PublishMap, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-      linear_filter->publish_statistics = std::bind(&LocaliserOutput::PublishStatistics, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6);
+        ekf->signal_statistics.push_back(std::bind(&Publisher::write_stats, bag_destination, _1, _2, _3, _4, _5, _6));
     }
 
+    // connect bag writers
+    if (!output_bag.empty()) {
+      ROS_INFO_STREAM("[OUTPUT] Writing to bagfile " << output_bag_name);
 
 
+      ekf->signal_odom_state.push_back(std::bind(&BagDestination::write_odom_SE2_msg, bag_destination, "odom", "Odometry", _1, _2, _3));
+      ekf->signal_odom_state.push_back(std::bind(&BagDestination::write_odom_tf_msg, bag_destination,  _1, _3));
 
-    /*********************************************************
-     *  connect the ROSOutput layer to the output destinations
-     */
+      ekf->signal_map_state.push_back(std::bind(&BagDestination::write_odom_SE2_msg, bag_destination, "utm", "UTM" _1, _2, _3));
+      ekf->signal_map_state.push_back(std::bind(&BagDestination::write_map_odom_tf_msg, bag_destination,  _1, _3));
 
-
-    if (output_bag.empty()) {
-  //      if (true) {
-
-      ROS_INFO_STREAM("[OUTPUT] Publishing output");
-      //localiser_output->publish_odom.push_back(std::function<void(nav_msgs::Odometry&, std::string)>);
-      //localiser_output->publish_odom.back() = std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2);
-      localiser_output->publish_odom.push_back(std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2));
-      localiser_output->publish_fix.push_back(std::bind(&Publisher::publish_fix, publisher, std::placeholders::_1, std::placeholders::_2));
-      localiser_output->publish_tf.push_back(std::bind(&Publisher::publish_tf, publisher, std::placeholders::_1, std::placeholders::_2));
-      localiser_output->publish_stats.push_back(std::bind(&Publisher::publish_stats, publisher, std::placeholders::_1, std::placeholders::_2));
-    }
-    else {
-      ROS_INFO_STREAM("[OUTPUT] Writing to bagfile " << output_bag);
-      bag_output->Initialise(output_bag);
-      //localiser_output->publish_odom = std::bind(&BagOutput::publish_odom, bag_output, std::placeholders::_1, std::placeholders::_2);
-
-      // publish the odom even though writing to the file - necessary if doing ICP matching
-      // todo: make this conditional on doing the ICP matching
-      if (run_pipeline) {
-        localiser_output->publish_odom.push_back(std::bind(&Publisher::publish_odom, publisher, std::placeholders::_1, std::placeholders::_2));
-        localiser_output->publish_tf.push_back(std::bind(&Publisher::publish_tf, publisher, std::placeholders::_1, std::placeholders::_2));
-      }
-
-      localiser_output->publish_odom.push_back(std::bind(&BagOutput::publish_odom, bag_output, std::placeholders::_1, std::placeholders::_2));
-      localiser_output->publish_fix.push_back(std::bind(&BagOutput::publish_fix, bag_output, std::placeholders::_1, std::placeholders::_2));
-      localiser_output->publish_tf.push_back(std::bind(&BagOutput::publish_tf, bag_output, std::placeholders::_1, std::placeholders::_2));
-  //    localiser_output->publish_stats.push_back(std::bind(&BagOutput::publish_stats, bag_output, std::placeholders::_1, std::placeholders::_2));
-      localiser_output->publish_stats.push_back(std::bind(&Publisher::publish_stats, publisher, std::placeholders::_1, std::placeholders::_2));
-
+      ekf->signal_statistics.push_back(std::bind(&BagDestination::write_stats, bag_destination, _1, _2, _3, _4, _5, _6));
     }
 
 
@@ -300,14 +237,12 @@ ROSLocaliser::Initialise() {
      *  start processing
      */
 
-    bag_input->ReadBag(input_bag);
-
+    if(input_bag_name.empty()){
+        // Spin and read messages forever
+        ros::spin();
+    }else{
+        bag_source->ReadBag(input_bag_name);
+    }
 
 }
 
-// todo: publish pointcloud from pipeline ? allow to make lidar_png. Work out how to use this with partial scans
-//  (attach to graph ?, make separate subscans and put in time order with the tf tree buffer?)
-
-// todo: make a launch for all other things required for pointcloudfeatures pipeline
-
-// todo: publish transforms

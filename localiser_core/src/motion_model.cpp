@@ -56,7 +56,6 @@ void MotionModel::calculate_pose_increment(ros::Time stamp) {
    // if (min(G.shape) > 0)
     increment_covariance = G * Q * G.transpose();
 
-
     signal_prediction(increment_mean, increment_covariance, stamp);
   }
 }

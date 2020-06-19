@@ -25,8 +25,8 @@ void SourceInterface::receive_IMU_msg(const sensor_msgs::Imu::ConstPtr& msg) {
     signal_yaw_rate(msg->angular_velocity.z,  msg->orientation_covariance[8], msg->header.stamp);
   }
 
-  if (perform_prediction) {
-    perform_prediction(msg->header.stamp);
+  if (signal_calculation) {
+    signal_calculation(msg->header.stamp);
   }
 }
 
