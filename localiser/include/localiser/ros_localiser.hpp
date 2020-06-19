@@ -36,39 +36,27 @@ public:
 
   std::shared_ptr<BagSource> bag_source;
 
-
-
-
-
   std::shared_ptr<ICPObservation> map_icp;
   std::shared_ptr<GNSSObservation> gnss;
   std::shared_ptr<PointcloudObservation> pointcloud;
 
-
   std::shared_ptr<MotionModel> ekf_motion_model;
-
-
-
 
   std::shared_ptr<GraphOptimiser> graph_optimiser;
 //  std::shared_ptr<GtsamOptimiser> gtsam_optimiser;
   std::shared_ptr<PositionHeadingEKF> ekf;
 
-
   std::shared_ptr<BagDestination> bag_destination;
   std::shared_ptr<Publisher> publisher;
 
 
-
-
   ros::ServiceServer service;
-
 
   bool InstructionCallback(localiser::instruct_localiser::Request& req,
                            localiser::instruct_localiser::Response& res);
 
 
-  bool run_pipeline;
+//  bool run_pipeline;
   std::string output_bag_name;
   std::string input_bag_name;
 

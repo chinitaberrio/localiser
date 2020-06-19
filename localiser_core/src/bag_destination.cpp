@@ -1,4 +1,4 @@
-﻿#include "bag_output.hpp"
+﻿#include "bag_destination.hpp"
 
 #include <rosbag/bag.h>
 #include <rosbag/view.h>

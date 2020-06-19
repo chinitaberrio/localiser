@@ -118,10 +118,12 @@ set(g2o_LIB_collection
 
 add_library(${PROJECT_NAME}
 #    src/ros_localiser.cpp
-    src/localiser_input.cpp
-    src/localiser_output.cpp
-    src/observer.cpp
-    src/predictor.cpp
+    src/bag_source.cpp
+    src/bag_destination.cpp
+    src/destination_interface.cpp
+    src/source_interface.cpp
+    src/observation_model.cpp
+    src/motion_model.cpp
     src/localisation_method.cpp
     src/linear_filter.cpp
     src/graph_optimiser.cpp
@@ -154,13 +156,7 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME}
 # ${PCL_LIBRARIES}
     ${CSPARSE_LIBRARY} # csparse is used for graph optimization
 #    ${g2o_LIB_collection}
- ${G2O_CORE_LIBRARY}
- ${G2O_SOLVER_SLAM2D_LINEAR}
- ${G2O_STUFF_LIBRARY}
- ${G2O_TYPES_SLAM2D}
- ${G2O_SOLVER_CHOLMOD}
- ${G2O_SOLVER_CSPARSE}
- ${G2O_SOLVER_CSPARSE_EXTENSION}
+ ${g2o_LIB_collection}
  #gtsam
 # ${GTSAM_LIBS}
   ${Boost_SYSTEM_LIBRARY}

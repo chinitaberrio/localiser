@@ -2,7 +2,7 @@
 // Created by stew on 25/05/20.
 //
 
-#include "bag_input.hpp"
+#include "bag_source.hpp"
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/NavSatFix.h>
