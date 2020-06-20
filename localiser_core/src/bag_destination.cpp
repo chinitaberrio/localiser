@@ -35,7 +35,7 @@ void BagDestination::write_stats(Eigen::Vector3d &observation, Eigen::Vector3d &
     auto msg = receive_stats2msg(observation, innovation,
                                  covariance, confidence, stamp, source);
 
-    bag->write("Statistics", stamp, msg);
+    bag->write("statistics", stamp, msg);
   }
 }
 

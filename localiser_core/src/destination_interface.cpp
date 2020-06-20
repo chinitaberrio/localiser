@@ -71,6 +71,8 @@ DestinationInterface::receive_map_tf2msg(Eigen::Vector3d &map_SE2_estimate, ros:
 
     if(stamp != odom_time){
         ROS_ERROR_STREAM("publishing map tf without correspondant odom tf");
+        ROS_ERROR_STREAM("map tf "<< stamp << " odom tf"<< odom_time );
+
     }
 
     if (datum_x == 0. || datum_y == 0.) {
@@ -128,8 +130,6 @@ DestinationInterface::receive_odom_tf2msg(Eigen::Vector3d &odom_SE2_estimate, ro
     odom_state = odom_SE2_estimate;
     odom_time = stamp;
 
-    stamp -= ros::Duration(0.0000001);
-
     tf::Transform transform;
     transform.setOrigin(tf::Vector3(odom_SE2_estimate[0], odom_SE2_estimate[1], 0.0) );
     tf::Quaternion q;
@@ -146,7 +146,7 @@ DestinationInterface::receive_odom_tf2msg(Eigen::Vector3d &odom_SE2_estimate, ro
     geom_tf.transform.translation.x = odom_baselink_tf.getOrigin()[0];
     geom_tf.transform.translation.y = odom_baselink_tf.getOrigin()[1];
     geom_tf.transform.translation.z = odom_baselink_tf.getOrigin()[2];
-    geom_tf.header.stamp = stamp;
+    geom_tf.header.stamp = stamp - ros::Duration(0.0000001);
     geom_tf.header.frame_id = odom_baselink_tf.frame_id_;
     geom_tf.child_frame_id = odom_baselink_tf.child_frame_id_;
 //    tf_pub_message.transforms.push_back(geom_tf);

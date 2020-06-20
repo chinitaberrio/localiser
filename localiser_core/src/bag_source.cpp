@@ -66,7 +66,6 @@ void BagSource::MessagePublisher(ros::Publisher &publisher, const rosbag::Messag
               if(odom_msg_count<odom_msg_reset_count){
                   odom_msg_count++;
               }else{
-                  behavior_tree_pipeline = std::make_shared<BehaviorTreePipeline>();
                   behavior_tree_pipeline->receive_message(odom_speed_msg);
                   odom_msg_count = 0;
               }
@@ -94,7 +93,8 @@ void BagSource::ReadBag(std::string bag_file) {
 
   bag_file_name = bag_file;
 
-  std::cout << bag_file_name << std::endl;
+//  std::cout << bag_file_name << std::endl;
+  behavior_tree_pipeline = std::make_shared<BehaviorTreePipeline>();
 
   this->init_playback();
 

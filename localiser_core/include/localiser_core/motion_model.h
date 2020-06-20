@@ -16,7 +16,7 @@ public:
     void receive_speed(double speed, double variance, ros::Time stamp);
 
 
-    std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, ros::Time)> signal_prediction;
+    std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, ros::Time&)> signal_prediction;
 
 
 

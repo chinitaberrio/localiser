@@ -30,7 +30,7 @@ void Publisher::write_stats(Eigen::Vector3d &observation, Eigen::Vector3d &innov
 
 
     ros::NodeHandle n;
-    pub = n.advertise<dataset_tools::LocaliserStats>("Statistics", 100);
+    pub = n.advertise<dataset_tools::LocaliserStats>("statistics", 100);
 
     auto msg = receive_stats2msg(observation, innovation,
                                  covariance, confidence, stamp, source);

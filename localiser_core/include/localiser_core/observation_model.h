@@ -37,7 +37,7 @@ class ObservationModel {
 public:
     ObservationModel(){}
 
-  std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, ros::Time, std::string&)> signal_update;
+  std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, ros::Time&, std::string&)> signal_update;
 
 
 

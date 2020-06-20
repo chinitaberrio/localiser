@@ -60,8 +60,6 @@ void SourceInterface::receive_odom_SE2_msg(const nav_msgs::Odometry::ConstPtr& m
 
 
 void SourceInterface::receive_fix_msg(const sensor_msgs::NavSatFix::ConstPtr& msg) {
-//    ROS_INFO_STREAM("GPS status: " << int(msg->status));
-    ROS_INFO_STREAM("GPS status: " << msg->status.status);
 
     if (signal_lat_lon){
         // lat and lon variance are the same, so passing one of them position_covariance[0] is enough

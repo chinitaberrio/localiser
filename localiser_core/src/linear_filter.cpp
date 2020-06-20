@@ -209,7 +209,7 @@ UpdateStep::condition(StateEstimate &prior/*,
 
   //std::cout << "x, P, H " << x << std::endl << std::endl << P << std::endl << std::endl << H << std::endl << std::endl;
   //std::cout << "z, zpred, v " << z << std::endl << std::endl << zpred << std::endl << std::endl << v << std::endl << std::endl;
-  std::cout << "z, zpred, v " << z << std::endl << std::endl << zpred << std::endl << std::endl << v << std::endl;
+//  std::cout << "z, zpred, v " << z << std::endl << std::endl << zpred << std::endl << std::endl << v << std::endl;
 
   // Calculate the KF (or EKF) update given the prior state [x,P], the
   // innovation v, the observe uncertainty R, and the (linearised)
@@ -465,11 +465,11 @@ PositionHeadingEKF::test_update() {
   Eigen::Vector3d expected_mean;
   expected_mean << 0.043065658704932, 0.000058101272323, -1.565287427184605;
 
-  std::cout << "update test" << std::endl
-            << expected_mean << std::endl << std::endl
-            << posterior.mean << std::endl << std::endl
-            << expected_variance << std::endl << std::endl
-            << posterior.covariance << std::endl << std::endl;
+//  std::cout << "update test" << std::endl
+//            << expected_mean << std::endl << std::endl
+//            << posterior.mean << std::endl << std::endl
+//            << expected_variance << std::endl << std::endl
+//            << posterior.covariance << std::endl << std::endl;
 
   // compare the expected output variance (from matlab) with the calculated variance from the filter
   //self.assertTrue(numpy.allclose(expected_variance, ukf.state_history[-1].var))
@@ -584,7 +584,7 @@ PositionHeadingEKF::jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d inp
 
 
 void
-PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time stamp, std::string &source) {
+PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time &stamp, std::string &source) {
 
   if (!initialised) {
     if (previous_speed > MINIMUM_INITIALISATION_SPEED) {
@@ -670,7 +670,7 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
 
 //! Perform the optimisation
 void
-PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3d& increment_cov, ros::Time stamp) {
+PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3d& increment_cov, ros::Time &stamp) {
 
     Eigen::Vector2d delta_state_change;
     delta_state_change << std::hypot(increment[0], increment[1]), increment[2];
@@ -682,11 +682,11 @@ PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3
         odom_uncertainty << 0., 0., 0.,
                             0., 0., 0.,
                             0., 0., 0.;
-
         for(auto &signal_odom : signal_odom_state){
             signal_odom(state_odom_only, odom_uncertainty, stamp);
         }
     }
+
 
   if (initialised) {
 
