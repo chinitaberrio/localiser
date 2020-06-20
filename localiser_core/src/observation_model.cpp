@@ -22,14 +22,14 @@
       }
 
       Eigen::Vector3d observation_vector;
-      observation_vector << x, y, yaw;
+      observation_vector << x, y, heading;
 
       std::string source = "map";
       // covariance [0] is x-twist-linear
       signal_update(observation_vector,
                     observation_covariance,
-                    source,
-                    stamp);
+                    stamp,
+                    source);
      }
   }
 
@@ -49,7 +49,7 @@
       icp_pipeline->publish_pose = std::bind(&BagSource::receive_odom_SE2_msg, &(*bag_source), std::placeholders::_1);
   }
 
-  void PointcloudObservation::receive_pointcloud(const sensor_msgs::NavSatFix::ConstPtr& pc_msg) {
+  void PointcloudObservation::receive_pointcloud(const sensor_msgs::PointCloud2::ConstPtr& pc_msg) {
         features_pipeline->receive_message(pc_msg);
   }
 

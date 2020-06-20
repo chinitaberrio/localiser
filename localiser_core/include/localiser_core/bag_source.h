@@ -22,6 +22,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2/utils.h>
 
+#include "source_interface.h"
 
 
 /*!
@@ -38,6 +39,7 @@ public:
   void MessagePublisher(ros::Publisher &publisher, const rosbag::MessageInstance &message);
   void ImagePublisher(image_transport::Publisher &publisher, const sensor_msgs::ImageConstPtr &message) {}
   void CameraInfoPublisher(ros::Publisher &publisher, const sensor_msgs::CameraInfoConstPtr &message) {}
+
 
   int odom_msg_count;
   int odom_msg_reset_count;

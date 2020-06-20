@@ -1,7 +1,7 @@
 #ifndef graph_optimiser_h
 #define graph_optimiser_h
 
-#include "localisation_method.hpp"
+#include "localisation_method.h"
 
 #include <cmath>
 #include <deque>
@@ -49,13 +49,6 @@
 #include <mrpt/math/CMatrixFixedNumeric.h>
 #include <mrpt/poses/CPosePDFGaussian.h>
 #include <mrpt/poses/CPoint2DPDFGaussian.h>
-//#include <mrpt/obs/CObservationBearingRange.h>
-//#include <mrpt/obs/CActionCollection.h>
-//#include <mrpt/obs/CActionRobotMovement2D.h>
-//#include <mrpt/slam/CRangeBearingKFSLAM2D.h>
-//#include <mrpt/gui/CDisplayWindow3D.h>
-//#include <mrpt/math/lightweight_geom_data.h>
-//#include <mrpt/opengl/stock_objects.h>
 
 /*!
  * \brief Optimise a graph of poses

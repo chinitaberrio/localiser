@@ -22,7 +22,7 @@ namespace rosbag {
 
 class BagDestination : public DestinationInterface{
 public:
-  BagDestination();
+  BagDestination(std::string bag_file_name);
   ~BagDestination();
 
   void write_stats(Eigen::Vector3d &observation, Eigen::Vector3d &innovation,

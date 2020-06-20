@@ -9,10 +9,6 @@
 
 #include <gps_common/conversions.h>
 
-
-#include <Eigen/Core>
-#include <Eigen/StdVector>
-
 #include <geometry_msgs/TransformStamped.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <tf2/LinearMath/Transform.h>
@@ -40,14 +36,14 @@ public:
   }
 
   //! Callback to publish odometry information
-  std::list<std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, ros::Time)>> signal_odom_state;
+  std::list<std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, ros::Time&)>> signal_odom_state;
 
   //! Callback to publish map information
-  std::list<std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, ros::Time)>> signal_map_state;
+  std::list<std::function<void(Eigen::Vector3d&, Eigen::Matrix3d&, ros::Time&)>> signal_map_state;
 
   //! Callback to publish statistics
   std::list<std::function<void(Eigen::Vector3d&, Eigen::Vector3d&,
-                               Eigen::Matrix3d&, Eigen::Vector3d&, ros::Time, std::string&)>> signal_statistics;
+                               Eigen::Matrix3d&, Eigen::Vector3d&, ros::Time&, std::string&)>> signal_statistics;
 
   // Current estimate of the robot state (map frame, odom frame)
   Eigen::Vector3d map_state;

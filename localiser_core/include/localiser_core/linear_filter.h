@@ -1,10 +1,10 @@
 #ifndef linear_filter_h
 #define linear_filter_h
 
-#include "localisation_method.hpp"
+#include "localisation_method.h"
 
-#include <Eigen/Dense>
-#include <Eigen/Cholesky>
+//#include <Eigen/Dense>
+//#include <Eigen/Cholesky>
 
 
 #include <cmath>
@@ -13,8 +13,8 @@
 #include <mrpt/poses/CPose2D.h>
 #include <mrpt_bridge/mrpt_bridge.h>
 
-#include <Eigen/Core>
-#include <Eigen/StdVector>
+//#include <Eigen/Core>
+//#include <Eigen/StdVector>
 
 
 //#include <tf2/LinearMath/Transform.h>
@@ -154,7 +154,7 @@ class LinearFilter : public LocalisationMethod {
 public:
 
   LinearFilter();
-  ~LinearFilter();
+//  ~LinearFilter();
 
   bool initialised = false;
   float MINIMUM_INITIALISATION_SPEED = .5;
@@ -182,14 +182,6 @@ public:
 
   void BoundHeading(const Eigen::Vector3d &current_state, Eigen::Vector3d &observation);
 
-
-  // Functions to implement for the specific problem being applied to the filter
-  virtual Eigen::Vector3d vehicle_model(const Eigen::Vector3d &mean, const Eigen::Vector2d &input_state) {return Eigen::Vector3d();}
-  virtual Eigen::VectorXd observation_model(const Eigen::VectorXd state, const Eigen::VectorXd observation) {return Eigen::VectorXd();}
-  virtual Eigen::Matrix3d transition_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state) {return Eigen::Matrix3d();}
-  virtual Eigen::MatrixXd jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state) {return Eigen::MatrixXd();}
-
-
 protected:
   std::shared_ptr<UpdateStep> last_update;
   std::shared_ptr<PredictStep> last_predict;
@@ -205,7 +197,6 @@ public:
 
   // Functions to implement for the specific problem being applied to the filter
   Eigen::Vector3d vehicle_model(const Eigen::Vector3d &mean, const Eigen::Vector2d &input_state);
-  Eigen::VectorXd observation_model(const Eigen::VectorXd state, const Eigen::VectorXd observation){};
   Eigen::Matrix3d transition_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state);
   Eigen::MatrixXd jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state);
 

@@ -1,4 +1,4 @@
-﻿#include "graph_optimiser.hpp"
+﻿#include "graph_optimiser.h"
 
 #include <g2o/types/slam2d/types_slam2d.h>
 

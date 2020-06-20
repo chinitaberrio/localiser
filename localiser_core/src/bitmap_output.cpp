@@ -1,4 +1,4 @@
-﻿#include "bitmap_output.hpp"
+﻿#include "bitmap_output.h"
 
 
 #include <tf/transform_datatypes.h>

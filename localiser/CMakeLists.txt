@@ -134,32 +134,10 @@ set(g2o_LIB_collection
 
 add_executable(${PROJECT_NAME}
     src/ros_localiser.cpp
-    src/bag_input.cpp
-  #  src/localiser_input.cpp
-  #  src/localiser_output.cpp
-  #  src/observer.cpp
-  #  src/predictor.cpp
-  #  src/localisation_method.cpp
-  #  src/linear_filter.cpp
-  #  src/graph_optimiser.cpp
-  #  src/gtsam_optimiser.cpp
-  #  src/publisher.cpp
   #  src/icp_matcher_pipeline.cpp
     #src/icp_map_maker.cpp
 )
-#add_executable(edit_g2o
-#    src/edit_g2o.cpp
-#    #src/icp_map_maker.cpp
-#)
-#add_executable(rewrite_bag
-#    src/rewrite_bag.cpp
-#    #src/icp_map_maker.cpp
-#)
 
-#add_executable(dropout_features
-#    src/dropout_features.cpp
-#    #src/icp_map_maker.cpp
-#)
 
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}
   ${PCL_LIBRARIES}
@@ -167,20 +145,20 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME}
   ${OpenCV_LIBRARIES}
 #    icp_map
 #    simple_graph
- ${MRPT_LIBS} 
+# ${MRPT_LIBS}
 # ${PCL_LIBRARIES}
-    ${CSPARSE_LIBRARY} # csparse is used for graph optimization
+#    ${CSPARSE_LIBRARY} # csparse is used for graph optimization
 #    ${g2o_LIB_collection}
- ${G2O_CORE_LIBRARY}
- ${G2O_SOLVER_SLAM2D_LINEAR}
- ${G2O_STUFF_LIBRARY}
- ${G2O_TYPES_SLAM2D}
- ${G2O_SOLVER_CHOLMOD}
- ${G2O_SOLVER_CSPARSE}
- ${G2O_SOLVER_CSPARSE_EXTENSION}
+# ${G2O_CORE_LIBRARY}
+# ${G2O_SOLVER_SLAM2D_LINEAR}
+# ${G2O_STUFF_LIBRARY}
+# ${G2O_TYPES_SLAM2D}
+# ${G2O_SOLVER_CHOLMOD}
+# ${G2O_SOLVER_CSPARSE}
+# ${G2O_SOLVER_CSPARSE_EXTENSION}
 # gtsam
 # ${GTSAM_LIBS}
-  ${Boost_SYSTEM_LIBRARY}
+#  ${Boost_SYSTEM_LIBRARY}
 
 )
 

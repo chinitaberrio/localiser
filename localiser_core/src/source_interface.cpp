@@ -60,11 +60,13 @@ void SourceInterface::receive_odom_SE2_msg(const nav_msgs::Odometry::ConstPtr& m
 
 
 void SourceInterface::receive_fix_msg(const sensor_msgs::NavSatFix::ConstPtr& msg) {
-    ROS_INFO_STREAM("GPS status: " << int(msg->status));
+//    ROS_INFO_STREAM("GPS status: " << int(msg->status));
+    ROS_INFO_STREAM("GPS status: " << msg->status.status);
+
     if (signal_lat_lon){
         // lat and lon variance are the same, so passing one of them position_covariance[0] is enough
         // don't use attitude variance
-        signal_lat_lon(msg->latitude, msg->longitude, int(msg->status), msg->position_covariance[0], msg->header.stamp);
+        signal_lat_lon(msg->latitude, msg->longitude, msg->status.status, msg->position_covariance[0], msg->header.stamp);
     }
 }
 
@@ -73,7 +75,7 @@ void SourceInterface::receive_fix_msg(const sensor_msgs::NavSatFix::ConstPtr& ms
 // so when we need to expose the binding options at this interface between receive_pointcloud_msg and
 // the pipelines that are implemented in sensor model layer
 // this means we can't isolate ros in the source_interface layer
-void SourceInterface::receive_pointcloud_msg(const sensor_msgs::NavSatFix::ConstPtr& msg) {
+void SourceInterface::receive_pointcloud_msg(const sensor_msgs::PointCloud2::ConstPtr& msg) {
     if (signal_pointcloud_msg){
         signal_pointcloud_msg(msg);
     }

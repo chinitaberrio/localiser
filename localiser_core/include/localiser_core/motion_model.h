@@ -1,7 +1,7 @@
 #ifndef MOTIONMODEL_H
 #define MOTIONMODEL_H
 
-#include "linear_filter.hpp"
+#include "linear_filter.h"
 
 
 
@@ -22,6 +22,7 @@ public:
 
 private:
     Eigen::Vector3d vehicle_model(double distance_travelled, double delta_heading);
+    Eigen::MatrixXd jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state);
 
     // use hard coded uncertainty values from python code
     const float VELOCITY_NOISE = 2.5; // m/s

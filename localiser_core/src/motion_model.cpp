@@ -33,11 +33,12 @@ void MotionModel::calculate_pose_increment(ros::Time stamp) {
 
     // not using covariance parsed from rosmsg, as rosmsg covariance is a fixed small value, we don't trust it
     // using our own fixed larger covariance
-    Eigen::Matrix2d motion_noise << VELOCITY_NOISE, 0.,
-                                    0., YAWRATE_NOISE;
+    Eigen::Matrix2d motion_noise;
+    motion_noise << VELOCITY_NOISE, 0.,
+                    0., YAWRATE_NOISE;
 
     motion_noise *= delta_time;
-    motion_noise = predict_step->motion.noise.array().square();
+    motion_noise = motion_noise.array().square();
 
 
 
@@ -54,7 +55,7 @@ void MotionModel::calculate_pose_increment(ros::Time stamp) {
    // TODO: work out when there is no input?
    // Update the covariances depending on whether there is an input or not
    // if (min(G.shape) > 0)
-    increment_covariance = G * Q * G.transpose();
+    Eigen::Matrix3d increment_covariance = G * Q * G.transpose();
 
     signal_prediction(increment_mean, increment_covariance, stamp);
   }
@@ -77,4 +78,46 @@ MotionModel::vehicle_model(double distance_travelled, double delta_heading){
   return posterior_in_prior_frame;
 }
 
+Eigen::MatrixXd
+MotionModel::jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state) {
+  /*
+    generate jacobian matrix
+        mean[x, y, theta]
+        input_state[delta_p, delta_theta]
 
+        This is the linearisation of the vehicle model for the input parameters
+  */
+
+  Eigen::MatrixXd jacobian_mat = Eigen::MatrixXd::Zero(3, 2);
+
+  // parameters used in the jacobian
+  auto delta_p = input_state[0];
+  auto delta_theta = input_state[1];
+  auto theta = mean[2];
+
+  // 0.5 is included as d/dx cos(0.5x) = -0.5sin(0.5x)
+
+  // partial derivatives
+  // delta_p w.r.t. x
+  jacobian_mat(0,0) = cos(theta + 0.5 * delta_theta);
+  //  print ("recalculate the off diagonal jacobians")
+  // delta_theta w.r.t. x
+  jacobian_mat(0,1) = (-0.5 * delta_p * cos(theta) * sin(0.5 * delta_theta) -
+                       0.5 * delta_p * sin(theta) * cos(0.5 * delta_theta));
+
+  // delta_p w.r.t. y
+  // jacobian_mat[1][0] = -1.0 * math.sin(theta + 0.5 * delta_theta)
+  jacobian_mat(1,0) = sin(theta + 0.5 * delta_theta);
+
+  // delta_theta w.r.t. y
+  jacobian_mat(1,1) = (-0.5 * delta_p * cos(theta) * cos(0.5 * delta_theta) +
+                       0.5 * delta_p * sin(theta) * sin(0.5 * delta_theta));
+
+  // delta_p w.r.t. theta
+  jacobian_mat(2,0) = 0;
+
+  // delta_theta w.r.t. theta
+  jacobian_mat(2,1) = 0.5;
+
+  return jacobian_mat;
+}

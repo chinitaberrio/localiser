@@ -6,8 +6,13 @@
 #include <sensor_msgs/NavSatFix.h>
 
 #include <dataset_tools/LocaliserStats.h>
-
+#include <tf2_msgs/TFMessage.h>
 #include <tf/transform_datatypes.h>
+#include <tf/transform_listener.h>
+#include <tf2/LinearMath/Quaternion.h>
+
+#include <Eigen/Core>
+#include <Eigen/StdVector>
 
 class DestinationInterface
 {
@@ -16,16 +21,16 @@ public:
 
     dataset_tools::LocaliserStats
     receive_stats2msg(Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
-                Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time stamp, std::string &source);
+                Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time &stamp, std::string &source);
 
     nav_msgs::Odometry
     receive_odom2msg(std::string &frame_id, std::string &topic_name, Eigen::Vector3d &SE2_estimate,
                                        Eigen::Matrix3d &covariance, ros::Time &stamp);
 
-    tf2_msgs::TFMessage
+    geometry_msgs::TransformStamped
     receive_map_tf2msg(Eigen::Vector3d &map_SE2_estimate, ros::Time &stamp);
 
-    tf2_msgs::TFMessage
+    geometry_msgs::TransformStamped
     receive_odom_tf2msg(Eigen::Vector3d &odom_SE2_estimate, ros::Time &stamp);
 
 

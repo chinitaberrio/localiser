@@ -70,7 +70,7 @@ add_definitions(${PCL_DEFINITIONS})
 catkin_package(
   LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS nav_msgs sensor_msgs std_msgs sensor_msgs mrpt_bridge rosbag
-  INCLUDE_DIRS include
+  INCLUDE_DIRS include include/${PROJECT_NAME}
 )
 
 ###########
@@ -109,12 +109,6 @@ set(g2o_LIB_collection
 )
 
 
-#add_library(icp_map
-#    src/icp_map_maker.cpp
-#)
-#add_library(simple_graph
-#    src/simple_graph.cpp
-#)
 
 add_library(${PROJECT_NAME}
 #    src/ros_localiser.cpp
@@ -124,28 +118,16 @@ add_library(${PROJECT_NAME}
     src/source_interface.cpp
     src/observation_model.cpp
     src/motion_model.cpp
-    src/localisation_method.cpp
+#    src/localisation_method.cpp
     src/linear_filter.cpp
-    src/graph_optimiser.cpp
+#    src/graph_optimiser.cpp
 #    src/gtsam_optimiser.cpp
     src/publisher.cpp
 #    src/point_cloud_features_pipeline.cpp
 #    src/icp_matcher_pipeline.cpp
     #src/icp_map_maker.cpp
 )
-#add_executable(edit_g2o
-#    src/edit_g2o.cpp
-#    #src/icp_map_maker.cpp
-#)
-#add_executable(rewrite_bag
-#    src/rewrite_bag.cpp
-#    #src/icp_map_maker.cpp
-#)
 
-#add_executable(dropout_features
-#    src/dropout_features.cpp
-#    #src/icp_map_maker.cpp
-#)
 
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}
   ${PCL_LIBRARIES}

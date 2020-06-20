@@ -1,4 +1,4 @@
-﻿#include "linear_filter.hpp"
+﻿#include "linear_filter.h"
 
 
 #include <algorithm>
@@ -10,8 +10,8 @@
 #include <vector>
 #include <cmath>
 
-#include <Eigen/Core>
-#include <Eigen/StdVector>
+//#include <Eigen/Core>
+//#include <Eigen/StdVector>
 
 #include <boost/math/distributions/chi_squared.hpp>
 
@@ -481,7 +481,7 @@ PositionHeadingEKF::test_update() {
 
 
 Eigen::Vector3d
-PositionHeadingEKF::vehicle_model(const Eigen::Vector3d &mean, const Eigen::Vector3d &input_state){
+PositionHeadingEKF::vehicle_model(const Eigen::Vector3d &mean, const Eigen::Vector2d &input_state){
   /*
   Vehicle transition model.
 
@@ -511,7 +511,7 @@ PositionHeadingEKF::vehicle_model(const Eigen::Vector3d &mean, const Eigen::Vect
 
 
 Eigen::Matrix3d
-PositionHeadingEKF::transition_matrix_fn(Eigen::Vector3d mean, Eigen::Vector3d increment) {
+PositionHeadingEKF::transition_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state) {
   /*
     generate covariance transition matrix
     mean[x, y, theta]
@@ -520,8 +520,8 @@ PositionHeadingEKF::transition_matrix_fn(Eigen::Vector3d mean, Eigen::Vector3d i
   Eigen::MatrixXd transition_matrix = Eigen::MatrixXd::Identity(3, 3);
 
   // parameters used in the transition matrix
-  double delta_p = std::hypot(increment[0], increment[1]);
-  double delta_theta = increment[2];
+  double delta_p = input_state[0];
+  double delta_theta = input_state[1];
   double theta = mean[2];
 
   double av_heading = theta + (delta_theta / 2.0);
@@ -532,6 +532,7 @@ PositionHeadingEKF::transition_matrix_fn(Eigen::Vector3d mean, Eigen::Vector3d i
 
   return transition_matrix;
 }
+
 
 
 
@@ -650,13 +651,13 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
 
     update_step->CalculateConsensus(3.5, states);
 
-    if (signal_statistics) {
+    for (auto &signal_stats : signal_statistics) {
         if (update_step->condition(prior)) {
-          signal_statistics(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source);
+          signal_stats(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source);
         }
         else {
           std::string source_bad = source + "-bad";
-          signal_statistics(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source_bad);
+          signal_stats(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source_bad);
         }
     }
 
@@ -675,15 +676,17 @@ PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3
     delta_state_change << std::hypot(increment[0], increment[1]), increment[2];
     state_odom_only = vehicle_model(state_odom_only, delta_state_change);
 
-  if (signal_odom_state) {
     Eigen::Matrix3d odom_uncertainty;
+    if (!signal_odom_state.empty()) {
 
-    odom_uncertainty << 0., 0., 0.,
-                        0., 0., 0.,
-                        0., 0., 0.;
+        odom_uncertainty << 0., 0., 0.,
+                            0., 0., 0.,
+                            0., 0., 0.;
 
-    signal_odom_state(state_odom_only, odom_uncertainty, stamp);
-  }
+        for(auto &signal_odom : signal_odom_state){
+            signal_odom(state_odom_only, odom_uncertainty, stamp);
+        }
+    }
 
   if (initialised) {
 
@@ -709,6 +712,7 @@ PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3
     predict_step->motion.noise << VELOCITY_NOISE, 0.,
         0., YAWRATE_NOISE;
 
+    float delta_time = 0.01;
     predict_step->motion.noise *= delta_time;
     predict_step->motion.noise = predict_step->motion.noise.array().square();
 
@@ -736,26 +740,30 @@ PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3
 
     state_odom_only[2] = predict_step->posterior.mean[2];
 
+    for (auto &signal_map : signal_map_state){
+      signal_map(predict_step->posterior.mean, predict_step->posterior.covariance, stamp);
+    }
 
+
+    for (auto &signal_stat:signal_statistics){
+        Eigen::Vector3d innovation;
+        innovation << 0., 0., 0.;
+
+        signal_stat(predict_step->posterior.mean, innovation, predict_step->posterior.covariance, innovation, stamp, *last_source);
+    }
+
+  }else{
+      for (auto &signal_stat:signal_statistics){
+          Eigen::Vector3d innovation;
+          innovation << 0., 0., 0.;
+
+          signal_stat(state_odom_only, innovation, odom_uncertainty, innovation, stamp, *last_source);
+      }
   }
 
-  if (signal_map_state){
-    signal_map_state(predict_step->posterior.mean, predict_step->posterior.covariance, stamp);
-  }
-
-  if (signal_statistics){
-      Eigen::Vector3d innovation;
-      innovation << 0., 0., 0.;
-
-      signal_statistics(predict_step->posterior.mean, innovation, predict_step->posterior.covariance, innovation, stamp, last_source);
-  }
-
-  //prior_motion.mean = motion;
-  //prior_motion_covariance = covariance;
-  //prior_motionprior_stamp = stamp;
 
   // todo: replace this with the last predict step motion
-  previous_speed = motion[0];
+  previous_speed = 100 * delta_state_change[0];
 }
 
 

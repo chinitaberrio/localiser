@@ -3,19 +3,22 @@
 
 #include <ros/ros.h>
 
-#include "localiser_core/graph_optimiser.hpp"
-//#include "localiser_core/gtsam_optimiser.hpp"
-#include "localiser_core/linear_filter.hpp"
+#include "localiser_core/linear_filter.h"
+#include "localiser_core/graph_optimiser.h"
+//#include "localiser_core/gtsam_optimiser.h"
 
-#include "bag_source.hpp"
-#include "dataset_tools/bag_output.hpp"
-#include "localiser_core/publisher.hpp"
+#include "localiser_core/bag_source.h"
 
-#include "localiser_core/localiser_input.hpp"
-#include "localiser_core/localiser_output.hpp"
+#include "localiser_core/observation_model.h"
+#include "localiser_core/motion_model.h"
 
-#include <dataset_tools/point_cloud_features_pipeline.hpp>
-#include <dataset_tools/icp_matcher_pipeline.hpp>
+
+
+
+#include "localiser_core/bag_destination.h"
+#include "localiser_core/publisher.h"
+
+
 
 #include "localiser/instruct_localiser.h"
 
@@ -32,7 +35,7 @@ public:
 
   ROSLocaliser();
 
-  void Initialise();
+  void connect_layers();
 
   std::shared_ptr<BagSource> bag_source;
 
@@ -42,7 +45,7 @@ public:
 
   std::shared_ptr<MotionModel> ekf_motion_model;
 
-  std::shared_ptr<GraphOptimiser> graph_optimiser;
+//  std::shared_ptr<GraphOptimiser> graph_optimiser;
 //  std::shared_ptr<GtsamOptimiser> gtsam_optimiser;
   std::shared_ptr<PositionHeadingEKF> ekf;
 

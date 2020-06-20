@@ -24,7 +24,7 @@
 
 class Publisher : public DestinationInterface {
 public:
-  Publisher();
+    Publisher(){}
 
   void write_odom_SE2_msg(std::string &frame_id, std::string &topic_name, Eigen::Vector3d &SE2_estimate,
                                Eigen::Matrix3d &covariance, ros::Time &stamp);

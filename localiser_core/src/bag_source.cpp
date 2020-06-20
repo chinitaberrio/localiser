@@ -2,7 +2,7 @@
 // Created by stew on 25/05/20.
 //
 
-#include "bag_source.hpp"
+#include "bag_source.h"
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/NavSatFix.h>
@@ -37,24 +37,28 @@ void BagSource::MessagePublisher(ros::Publisher &publisher, const rosbag::Messag
 //    publisher.publish(message);
 //  }
 
-      auto msg = message.instantiate<sensor_msgs::Imu>();
-      if (msg != NULL && imu_topics.count(message.getTopic()) != 0)
-        receive_IMU_msg(msg);
+      auto imu_msg = message.instantiate<sensor_msgs::Imu>();
+      if (imu_msg && imu_topics.count(message.getTopic()) != 0){
+        receive_IMU_msg(imu_msg);
+        return;
+      }
 
-      auto msg = message.instantiate<sensor_msgs::NavSatFix>();
-      if (msg && fix_topics.count(message.getTopic()) != 0) {
-        receive_fix_msg(msg);
+      auto fix_msg = message.instantiate<sensor_msgs::NavSatFix>();
+      if (fix_msg && fix_topics.count(message.getTopic()) != 0) {
+        receive_fix_msg(fix_msg);
+        return;
       }
 
 
-      auto msg = message.instantiate<sensor_msgs::PointCloud2>();
-      if (msg && pointcloud_topics.count(message.getTopic()) != 0) {
-        receive_pointcloud_msg(msg);
+      auto pc_msg = message.instantiate<sensor_msgs::PointCloud2>();
+      if (pc_msg && pointcloud_topics.count(message.getTopic()) != 0) {
+        receive_pointcloud_msg(pc_msg);
+        return;
       }
 
 
-      auto msg = message.instantiate<nav_msgs::Odometry>();
-      if (msg && odom_speed_topics.count(message.getTopic()) != 0){
+      auto odom_speed_msg = message.instantiate<nav_msgs::Odometry>();
+      if (odom_speed_msg && odom_speed_topics.count(message.getTopic()) != 0){
 
           // in offline processing/read from bag mode, publish a tick msg for behavior tree using /zio/odometry/rear
           // max frequency is 10hz
@@ -63,18 +67,20 @@ void BagSource::MessagePublisher(ros::Publisher &publisher, const rosbag::Messag
                   odom_msg_count++;
               }else{
                   behavior_tree_pipeline = std::make_shared<BehaviorTreePipeline>();
-                  behavior_tree_pipeline->receive_message(msg);
+                  behavior_tree_pipeline->receive_message(odom_speed_msg);
                   odom_msg_count = 0;
               }
           }
 
-          receive_odom_speed_Msg(msg);
+          receive_odom_speed_msg(odom_speed_msg);
+          return;
       }
 
 
-      auto msg = message.instantiate<nav_msgs::Odometry>();
-      if (msg && odom_update_topics.count(message.getTopic()) != 0){
-        receive_odom_SE2_msg(msg);
+      auto odom_SE2_msg = message.instantiate<nav_msgs::Odometry>();
+      if (odom_SE2_msg && odom_SE2_topics.count(message.getTopic()) != 0){
+        receive_odom_SE2_msg(odom_SE2_msg);
+        return;
       }
 
 }

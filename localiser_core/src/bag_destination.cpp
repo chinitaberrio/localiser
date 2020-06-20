@@ -1,4 +1,4 @@
-﻿#include "bag_destination.hpp"
+﻿#include "bag_destination.h"
 
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
@@ -16,10 +16,10 @@
 
 
 
-BagDestination::BagDestination() {
+BagDestination::BagDestination(std::string bag_file_name) {
 
   bag = std::make_shared<rosbag::Bag>();
-  bag->open(bag_file, rosbag::bagmode::Write);
+  bag->open(bag_file_name, rosbag::bagmode::Write);
 
 }
 
@@ -58,7 +58,7 @@ void BagDestination::write_map_odom_tf_msg(Eigen::Vector3d &map_SE2_estimate, ro
   auto msg = receive_map_tf2msg(map_SE2_estimate, stamp);
 
   if (bag->isOpen()) {
-    bag->write("/tf", msg.stamp_, tf_pub_message);
+    bag->write("/tf", stamp, msg);
   }
 }
 
@@ -67,7 +67,7 @@ void BagDestination::write_odom_tf_msg(Eigen::Vector3d &odom_SE2_estimate, ros::
   auto msg = receive_odom_tf2msg(odom_SE2_estimate, stamp);
 
   if (bag->isOpen()) {
-    bag->write("/tf", msg.stamp_, tf_pub_message);
+    bag->write("/tf", stamp, msg);
   }
 }
 

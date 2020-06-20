@@ -8,8 +8,8 @@ DestinationInterface::DestinationInterface()
 
 
 dataset_tools::LocaliserStats
-BagOutput::receive_stats2msg(Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
-            Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time stamp, std::string &source){
+DestinationInterface::receive_stats2msg(Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
+            Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time &stamp, std::string &source){
 
 
       dataset_tools::LocaliserStats stats_msg;
@@ -44,7 +44,7 @@ BagOutput::receive_stats2msg(Eigen::Vector3d &observation, Eigen::Vector3d &inno
 
 
 nav_msgs::Odometry
-BagOutput::receive_odom2msg(std::string &frame_id, std::string &topic_name, Eigen::Vector3d &SE2_estimate,
+DestinationInterface::receive_odom2msg(std::string &frame_id, std::string &topic_name, Eigen::Vector3d &SE2_estimate,
                                    Eigen::Matrix3d &covariance, ros::Time &stamp) {
 
 
@@ -65,11 +65,11 @@ BagOutput::receive_odom2msg(std::string &frame_id, std::string &topic_name, Eige
 }
 
 
-tf2_msgs::TFMessage
-BagOutput::receive_map_tf2msg(Eigen::Vector3d &map_SE2_estimate, ros::Time &stamp) {
+geometry_msgs::TransformStamped
+DestinationInterface::receive_map_tf2msg(Eigen::Vector3d &map_SE2_estimate, ros::Time &stamp) {
 
 
-    if(stamp != odom_stamp){
+    if(stamp != odom_time){
         ROS_ERROR_STREAM("publishing map tf without correspondant odom tf");
     }
 
@@ -87,45 +87,45 @@ BagOutput::receive_map_tf2msg(Eigen::Vector3d &map_SE2_estimate, ros::Time &stam
 
     }
 
-
+//    tf2_msgs::TFMessage tf_pub_message;
+    geometry_msgs::TransformStamped geom_tf;
     if (datum_x != 0. && datum_y != 0.) {
-      // publish the map transform
-      tf::Transform transform;
-      tf::Vector3 base_in_utm(map_SE2_estimate[0], map_SE2_estimate[1], 0.0);
-      tf::Vector3 base_in_odom_position(odom_state[0], odom_state[1], 0.0);
-      tf::Vector3 datum(datum_x, datum_y, 0.0);
+        // publish the map transform
+        tf::Transform transform;
+        tf::Vector3 base_in_utm(map_SE2_estimate[0], map_SE2_estimate[1], 0.0);
+        tf::Vector3 base_in_odom_position(odom_state[0], odom_state[1], 0.0);
+        tf::Vector3 datum(datum_x, datum_y, 0.0);
 
-      // map to odom transform is translation only, no rotation
-      transform.setOrigin(base_in_utm - datum - base_in_odom_position);
-      tf::Quaternion q;
-      q.setRPY(0., 0., 0.);
-      transform.setRotation(q);
-      tf::StampedTransform map_odom_tf(transform, stamp, "map", "odom");
+        // map to odom transform is translation only, no rotation
+        transform.setOrigin(base_in_utm - datum - base_in_odom_position);
+        tf::Quaternion q;
+        q.setRPY(0., 0., 0.);
+        transform.setRotation(q);
+        tf::StampedTransform map_odom_tf(transform, stamp, "map", "odom");
+
+        // TODO: this could prob be simplified
+
+        geom_tf.transform.rotation.x = map_odom_tf.getRotation()[0];
+        geom_tf.transform.rotation.y = map_odom_tf.getRotation()[1];
+        geom_tf.transform.rotation.z = map_odom_tf.getRotation()[2];
+        geom_tf.transform.rotation.w = map_odom_tf.getRotation()[3];
+        geom_tf.transform.translation.x = map_odom_tf.getOrigin()[0];
+        geom_tf.transform.translation.y = map_odom_tf.getOrigin()[1];
+        geom_tf.transform.translation.z = map_odom_tf.getOrigin()[2];
+        geom_tf.header.stamp = map_odom_tf.stamp_;
+        geom_tf.header.frame_id = map_odom_tf.frame_id_;
+        geom_tf.child_frame_id = map_odom_tf.child_frame_id_;
+//        tf_pub_message.transforms.push_back(geom_tf);
 
     }
 
-    // TODO: this could prob be simplified
-
-    tf2_msgs::TFMessage tf_pub_message;
-    geometry_msgs::TransformStamped geom_tf;
-    geom_tf.transform.rotation.x = map_odom_tf.getRotation()[0];
-    geom_tf.transform.rotation.y = map_odom_tf.getRotation()[1];
-    geom_tf.transform.rotation.z = map_odom_tf.getRotation()[2];
-    geom_tf.transform.rotation.w = map_odom_tf.getRotation()[3];
-    geom_tf.transform.translation.x = map_odom_tf.getOrigin()[0];
-    geom_tf.transform.translation.y = map_odom_tf.getOrigin()[1];
-    geom_tf.transform.translation.z = map_odom_tf.getOrigin()[2];
-    geom_tf.header.stamp = map_odom_tf.stamp_;
-    geom_tf.header.frame_id = map_odom_tf.frame_id_;
-    geom_tf.child_frame_id = map_odom_tf.child_frame_id_;
-    tf_pub_message.transforms.push_back(geom_tf);
-
-    return tf_pub_message;
+//    return tf_pub_message;
+    return geom_tf;
 }
 
-tf2_msgs::TFMessage
-BagOutput::receive_odom_tf2msg(Eigen::Vector3d &odom_SE2_estimate, ros::Time &stamp) {
-    odom_state = SE2_estimate;
+geometry_msgs::TransformStamped
+DestinationInterface::receive_odom_tf2msg(Eigen::Vector3d &odom_SE2_estimate, ros::Time &stamp) {
+    odom_state = odom_SE2_estimate;
     odom_time = stamp;
 
     stamp -= ros::Duration(0.0000001);
@@ -137,20 +137,22 @@ BagOutput::receive_odom_tf2msg(Eigen::Vector3d &odom_SE2_estimate, ros::Time &st
     transform.setRotation(q);
     tf::StampedTransform odom_baselink_tf(transform, stamp, "odom", "base_link");
 
-    tf2_msgs::TFMessage tf_pub_message;
+//    tf2_msgs::TFMessage tf_pub_message;
     geometry_msgs::TransformStamped geom_tf;
-    geom_tf.transform.rotation.x = msg.getRotation()[0];
-    geom_tf.transform.rotation.y = msg.getRotation()[1];
-    geom_tf.transform.rotation.z = msg.getRotation()[2];
-    geom_tf.transform.rotation.w = msg.getRotation()[3];
-    geom_tf.transform.translation.x = msg.getOrigin()[0];
-    geom_tf.transform.translation.y = msg.getOrigin()[1];
-    geom_tf.transform.translation.z = msg.getOrigin()[2];
+    geom_tf.transform.rotation.x = odom_baselink_tf.getRotation()[0];
+    geom_tf.transform.rotation.y = odom_baselink_tf.getRotation()[1];
+    geom_tf.transform.rotation.z = odom_baselink_tf.getRotation()[2];
+    geom_tf.transform.rotation.w = odom_baselink_tf.getRotation()[3];
+    geom_tf.transform.translation.x = odom_baselink_tf.getOrigin()[0];
+    geom_tf.transform.translation.y = odom_baselink_tf.getOrigin()[1];
+    geom_tf.transform.translation.z = odom_baselink_tf.getOrigin()[2];
     geom_tf.header.stamp = stamp;
-    geom_tf.header.frame_id = msg.frame_id_;
-    geom_tf.child_frame_id = msg.child_frame_id_;
-    tf_pub_message.transforms.push_back(geom_tf);
+    geom_tf.header.frame_id = odom_baselink_tf.frame_id_;
+    geom_tf.child_frame_id = odom_baselink_tf.child_frame_id_;
+//    tf_pub_message.transforms.push_back(geom_tf);
 
-    return tf_pub_message;
+//    return tf_pub_message;
+    return geom_tf;
+
 }
 
