@@ -587,7 +587,7 @@ void
 PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time &stamp, std::string &source) {
 
   if (!initialised) {
-    if (previous_speed > MINIMUM_INITIALISATION_SPEED) {
+
 
       // Add directly, this is the initialisation of the filter, so it is definitely considered valid
       std::shared_ptr<UpdateStep> update_step = std::make_shared<UpdateStep>();
@@ -604,7 +604,9 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
       update_step->stamp = stamp;
 
       initialised = true;
-    }
+      last_source = std::make_shared<std::string>(source);
+      ROS_ERROR("init");
+
   }
   else {
     // The observations are generally older than the latest relative motion estimate
@@ -654,17 +656,21 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
     for (auto &signal_stats : signal_statistics) {
         if (update_step->condition(prior)) {
           signal_stats(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source);
+          last_source = std::make_shared<std::string>(source);
         }
         else {
           std::string source_bad = source + "-bad";
           signal_stats(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source_bad);
+          last_source = std::make_shared<std::string>(source_bad);
         }
     }
+    ROS_INFO_STREAM_THROTTLE(1, "update source: " << *last_source);
+
 
     states.push_back(update_step);
   }
 
-  last_source = std::make_shared<std::string>(source);
+
 }
 
 
@@ -748,17 +754,18 @@ PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3
     for (auto &signal_stat:signal_statistics){
         Eigen::Vector3d innovation;
         innovation << 0., 0., 0.;
-
         signal_stat(predict_step->posterior.mean, innovation, predict_step->posterior.covariance, innovation, stamp, *last_source);
     }
+//    ROS_ERROR_STREAM_THROTTLE(1, "predict source: " << *last_source << stamp);
 
   }else{
       for (auto &signal_stat:signal_statistics){
           Eigen::Vector3d innovation;
           innovation << 0., 0., 0.;
-
           signal_stat(state_odom_only, innovation, odom_uncertainty, innovation, stamp, *last_source);
       }
+//      ROS_ERROR_STREAM_THROTTLE(1, "predict source: " << *last_source << stamp);
+
   }
 
 

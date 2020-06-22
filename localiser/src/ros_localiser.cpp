@@ -113,7 +113,7 @@ ROSLocaliser::connect_layers() {
 
         // to observation models
 //        bag_source->signal_pointcloud_msg = std::bind(&PointcloudObservation::receive_pointcloud, &(*pointcloud), std::placeholders::_1);
-        bag_source->signal_SE2 = std::bind(&ICPObservation::receive_ICP, &(*map_icp), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4 );
+//        bag_source->signal_SE2 = std::bind(&ICPObservation::receive_ICP, &(*map_icp), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4 );
 
         bag_source->signal_lat_lon = std::bind(&GNSSObservation::receive_gps, &(*gnss), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5 );
 
@@ -149,11 +149,16 @@ ROSLocaliser::connect_layers() {
 
     // connect publishers
     {
-        ekf->signal_odom_state.push_back(std::bind(&Publisher::write_odom_SE2_msg, publisher, std::string("odom"), std::string("Odometry"), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+        publisher->odom_SE2_topics.push_back(std::string("odometry"));
+        publisher->odom_SE2_topics.push_back(std::string("utm"));
+
+        publisher->advertise_topics();
+
+        ekf->signal_odom_state.push_back(std::bind(&Publisher::write_odom_SE2_msg, publisher, std::string("odom"), std::string("odometry"), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
         ekf->signal_odom_state.push_back(std::bind(&Publisher::write_odom_tf_msg, publisher,  std::placeholders::_1, std::placeholders::_3));
 
         // publish map odometry msg - necessary if doing ICP matching
-        ekf->signal_map_state.push_back(std::bind(&Publisher::write_odom_SE2_msg, publisher, std::string("utm"), std::string("UTM"), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+        ekf->signal_map_state.push_back(std::bind(&Publisher::write_odom_SE2_msg, publisher, std::string("utm"), std::string("utm"), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
         ekf->signal_map_state.push_back(std::bind(&Publisher::write_map_odom_tf_msg, publisher,  std::placeholders::_1, std::placeholders::_3));
 
         ekf->signal_statistics.push_back(std::bind(&Publisher::write_stats, publisher, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
@@ -163,11 +168,10 @@ ROSLocaliser::connect_layers() {
     if (!output_bag_name.empty()) {
       ROS_INFO_STREAM("[OUTPUT] Writing to bagfile " << output_bag_name);
 
-
-      ekf->signal_odom_state.push_back(std::bind(&BagDestination::write_odom_SE2_msg, bag_destination, std::string("odom"), std::string("Odometry"),  std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+      ekf->signal_odom_state.push_back(std::bind(&BagDestination::write_odom_SE2_msg, bag_destination, std::string("odom"), std::string("/localiser/odometry"),  std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
       ekf->signal_odom_state.push_back(std::bind(&BagDestination::write_odom_tf_msg, bag_destination,  std::placeholders::_1, std::placeholders::_3));
 
-      ekf->signal_map_state.push_back(std::bind(&BagDestination::write_odom_SE2_msg, bag_destination, std::string("utm"), std::string("UTM"), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+      ekf->signal_map_state.push_back(std::bind(&BagDestination::write_odom_SE2_msg, bag_destination, std::string("utm"), std::string("/localiser/utm"), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
       ekf->signal_map_state.push_back(std::bind(&BagDestination::write_map_odom_tf_msg, bag_destination,  std::placeholders::_1, std::placeholders::_3));
 
       ekf->signal_statistics.push_back(std::bind(&BagDestination::write_stats, bag_destination, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
@@ -214,7 +218,7 @@ bool status
 using namespace std::placeholders;
      case 0://RESET
         ROS_WARN_STREAM("RESET: localiser reset, reinitialising using GPS");
-        bag_source->signal_pointcloud_msg = nullptr;
+        bag_source->signal_SE2 = nullptr;
         bag_source->signal_lat_lon = std::bind(&GNSSObservation::receive_gps, &(*gnss), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5 );
 
         // make a new object of localisation method
@@ -228,17 +232,28 @@ using namespace std::placeholders;
 //        linear_filter->publish_statistics = std::bind(&LocaliserOutput::PublishStatistics, localiser_output, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6);
         break;
 
-     case 1://MAP_ON
-        ROS_WARN_STREAM("MAP_ON: localiser switched to using map-icp updates");
+     case 1://MAP_UPDATE
+        ROS_WARN_STREAM("MAP_UPDATE: localiser switched to using map-icp updates");
         bag_source->signal_lat_lon = nullptr;
         bag_source->signal_pointcloud_msg = std::bind(&PointcloudObservation::receive_pointcloud, &(*pointcloud), std::placeholders::_1);
+        bag_source->signal_SE2 = std::bind(&ICPObservation::receive_ICP, &(*map_icp), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4 );
         break;
 
-     case 3://ABS_ON
-        ROS_WARN_STREAM("ABS_ON: localiser switched to using GPS updates");
+     case 3://ABS_UPDATE
+        ROS_WARN_STREAM("ABS_UPDATE: localiser switched to using GPS updates");
         bag_source->signal_lat_lon = std::bind(&GNSSObservation::receive_gps, &(*gnss), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5 );
-        bag_source->signal_pointcloud_msg = nullptr;//std::function<void()>();
+
         break;
+
+      case 5://ICP_START_MATCH
+         ROS_WARN_STREAM("ICP_START_MATCH: localiser enable ICP pipeline, but do not incorporate SE2 match update yet");
+         // try to find ICP good matches
+         bag_source->signal_pointcloud_msg = std::bind(&PointcloudObservation::receive_pointcloud, &(*pointcloud), std::placeholders::_1);
+         // but do not incorporate SE2 match update yet
+         bag_source->signal_SE2 = nullptr;//std::function<void()>();
+
+         break;
+
 
      default:
         ROS_WARN_STREAM("Currently undefined localiser instruction type " << int(req.instructionType));

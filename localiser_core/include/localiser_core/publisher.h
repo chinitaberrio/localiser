@@ -36,9 +36,14 @@ public:
 
   void write_odom_tf_msg(Eigen::Vector3d &odom_SE2_estimate, ros::Time &stamp);
 
-//  std::map<std::string, ros::Publisher> publishers;
+  void advertise_topics();
+
+  ros::NodeHandle nh;
+
   tf::TransformBroadcaster transform_broadcaster;
-  ros::Publisher pub;
+
+  std::vector<std::string> odom_SE2_topics;
+  std::map<std::string, ros::Publisher> publishers;
 
 
 };

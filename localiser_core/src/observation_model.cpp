@@ -102,6 +102,7 @@
           Eigen::Vector3d observation(east, north, heading);
 
           std::string source = "gnss";
+          // send update to localiser method
           signal_update(observation, covariance, stamp, source);
       }
 
