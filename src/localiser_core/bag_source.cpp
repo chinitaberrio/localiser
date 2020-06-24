@@ -60,7 +60,6 @@ void BagSource::MessagePublisher(ros::Publisher &publisher, const rosbag::Messag
       auto odom_speed_msg = message.instantiate<nav_msgs::Odometry>();
       if (odom_speed_msg && odom_speed_topics.count(message.getTopic()) != 0){
           if(behavior_tree){
-              std::cout << "behavior_tree " ;
               // in offline processing/read from bag mode, publish a tick msg for behavior tree using /zio/odometry/rear
               // max frequency is 10hz
               if(message.getTopic() == "/zio/odometry/rear"){
