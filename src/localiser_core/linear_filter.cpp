@@ -140,7 +140,7 @@ UpdateStep::CalculateConsensus(float consensus_window, std::deque<std::shared_pt
 
   }
 
-  if (speed_discrepancy > 0.09 || square_error_sum > 0.02) {
+  if (speed_discrepancy > 0.09 /*|| square_error_sum > 0.02*/) {
     std::cout << "REJECT" << std::endl;
 //    valid_flag = false;
     valid_individual = false;
@@ -605,7 +605,7 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
 
       initialised = true;
       last_source = std::make_shared<std::string>(source);
-      ROS_ERROR("init");
+      ROS_WARN("init");
 
   }
   else {
@@ -624,23 +624,23 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
     update_step->valid_sequence = false;
     update_step->stamp = stamp;
 
-    // Override covariance with fixed values
-    Eigen::Matrix3d R; // observation noise
+//    // Override covariance with fixed values
+//    Eigen::Matrix3d R; // observation noise
 
-    // calculate noise R
-    R << POSITION_ERROR, 0., 0.,
-        0., POSITION_ERROR, 0.,
-        0., 0., HEADING_ERROR;
+//    // calculate noise R
+//    R << POSITION_ERROR, 0., 0.,
+//        0., POSITION_ERROR, 0.,
+//        0., 0., HEADING_ERROR;
 
-    R = R.array().square();
+//    R = R.array().square();
 
-    update_step->observation.noise = R;
+//    update_step->observation.noise = R;
 
 //    Eigen::MatrixXd H = Eigen::MatrixXd(2,3);
     update_step->observation.observation_matrix = Eigen::MatrixXd(3,3);
-    update_step->observation.observation_matrix << 1., 0., 0.,
-        0., 1., 0.,
-        0., 0., 1.;
+    update_step->observation.observation_matrix  << 1., 0., 0.,
+                                                    0., 1., 0.,
+                                                    0., 0., 1.;
 
 
     // generate a linked list of predict steps
@@ -653,19 +653,19 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
 
     update_step->CalculateConsensus(3.5, states);
 
-    for (auto &signal_stats : signal_statistics) {
-        if (update_step->condition(prior)) {
-          signal_stats(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source);
-          last_source = std::make_shared<std::string>(source);
-        }
-        else {
-          std::string source_bad = source + "-bad";
-          signal_stats(observation, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, source_bad);
-          last_source = std::make_shared<std::string>(source_bad);
-        }
+    if (update_step->condition(prior)) {
+      last_source = std::make_shared<std::string>(source);
     }
-    ROS_INFO_STREAM_THROTTLE(1, "update source: " << *last_source);
+    else {
+      std::string source_bad = source + "-bad";
+      last_source = std::make_shared<std::string>(source_bad);
+    }
 
+    for (auto &signal_stats : signal_statistics) {
+      signal_stats(update_step->posterior.mean, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, *last_source);
+    }
+
+    ROS_INFO_STREAM_THROTTLE(1, "update source: " << *last_source);
 
     states.push_back(update_step);
   }
@@ -716,7 +716,7 @@ PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3
 
     //Eigen::Matrix2d Q; //process noise
     predict_step->motion.noise << VELOCITY_NOISE, 0.,
-        0., YAWRATE_NOISE;
+                                  0., YAWRATE_NOISE;
 
     float delta_time = 0.01;
     predict_step->motion.noise *= delta_time;

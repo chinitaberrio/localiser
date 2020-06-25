@@ -71,10 +71,10 @@ ROSLocaliser::connect_layers() {
 
 
     /*********************************************************
-     * connect the source interface layer
+     * connect slots of the source interface layer
      *
     *  live ros topics or bag topics
-    *  connect to callback function in bag_source
+    *  connect to callback functions(slots) in bag_source
     */
     ros::NodeHandle n;
     std::vector<ros::Subscriber> subscribers;
@@ -114,7 +114,10 @@ ROSLocaliser::connect_layers() {
 
 
 
-        // bind bag input functions to appropriate message handlers
+    /*********************************************************
+     * connect signals of the source interface layer to slots of observation/motion model layer
+     *
+    */
     {
 
         // to observation models
