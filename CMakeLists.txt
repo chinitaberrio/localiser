@@ -74,6 +74,8 @@ add_definitions(${PCL_DEFINITIONS})
 add_service_files(
         FILES
         instruct_localiser.srv
+        reset_localiser.srv
+
 )
 
 ## Generate added messages and services with any dependencies listed here

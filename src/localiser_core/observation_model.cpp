@@ -70,17 +70,12 @@
 
           // if this msg is the first received, or the speed is less than speed threshold, or fix_status is no_fix,
           // don't send update
-          if (previous_east == 0. && previous_north == 0. ||
-              pow(north-previous_north, east - previous_east)<SPEED_THRESHOLD_SQUARED ||
-              fix_status == -1) {
+          if (previous_east == 0. && previous_north == 0. ) {
             previous_east = east;
             previous_north = north;
             return;
           }
 
-          double heading = atan2(north-previous_north, east - previous_east);
-          previous_east = east;
-          previous_north = north;
 //          ROS_WARN_STREAM("reached GNSSObservation::receive_gps " << east << " " << north << " " << heading );
 
           Eigen::Matrix3d covariance;
@@ -101,11 +96,25 @@
           }
 
 
-          Eigen::Vector3d observation(east, north, heading);
+//          ROS_WARN_STREAM("dist squared: " << std::hypot(north-previous_north, east - previous_east) << " SPEED_THRESHOLD_SQUARED " << SPEED_THRESHOLD_SQUARED);
+
+          Eigen::Vector3d observation;
+
+          if(fix_status == -1  ||
+                  std::hypot(north-previous_north, east - previous_east) < SPEED_THRESHOLD_SQUARED){
+              observation << std::numeric_limits<double>::quiet_NaN(),
+                      std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN();
+          }else{
+              double heading = atan2(north-previous_north, east - previous_east);
+              observation << east, north, heading;
+          }
 
           std::string source = "gnss";
           // send update to localiser method
           signal_update(observation, covariance, stamp, source);
+
+          previous_east = east;
+          previous_north = north;
       }
 
   }

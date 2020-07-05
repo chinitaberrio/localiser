@@ -43,11 +43,6 @@ void SourceInterface::receive_odom_speed_msg(const nav_msgs::Odometry::ConstPtr&
 
 void SourceInterface::receive_odom_SE2_msg(const nav_msgs::Odometry::ConstPtr& msg) {
     if (signal_SE2){
-        if (std::isnan(msg->pose.pose.position.x) ||
-            std::isnan(msg->pose.pose.position.y) ) {
-          ROS_INFO_STREAM_THROTTLE(1., "rejecting ICP update due to NAN data");
-          return;
-        }
 
         if (datum_x == 0. || datum_y == 0.) {
 
@@ -68,7 +63,12 @@ void SourceInterface::receive_odom_SE2_msg(const nav_msgs::Odometry::ConstPtr& m
         tf2::Matrix3x3 mat(orientation_tf);
         double roll, pitch, yaw;
         mat.getRPY(roll, pitch, yaw);
-        if(msg->header.frame_id == "map"){
+
+        if (std::isnan(msg->pose.pose.position.x) ||
+            std::isnan(msg->pose.pose.position.y) ) {
+          ROS_INFO_STREAM_THROTTLE(1., "rejecting ICP update due to NAN data");
+          signal_SE2(msg->pose.pose.position.x, msg->pose.pose.position.y, yaw, msg->header.stamp);
+        }else if(msg->header.frame_id == "map"){
             signal_SE2(msg->pose.pose.position.x+datum_x, msg->pose.pose.position.y+datum_y, yaw, msg->header.stamp);
         }else if(msg->header.frame_id == "utm"){
             signal_SE2(msg->pose.pose.position.x, msg->pose.pose.position.y, yaw, msg->header.stamp);

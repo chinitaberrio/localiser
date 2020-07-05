@@ -107,7 +107,7 @@ public:
   //Eigen::Vector3d motion_model(const Eigen::Vector3d &mean, const Eigen::Vector2d &input_state) {return Eigen::Vector3d();}
 
 
-  std::shared_ptr<PredictStep> prev, next;
+  std::shared_ptr<PredictStep> prev, next;    ///////////////////////
 };
 
 
@@ -146,7 +146,7 @@ public:
   Eigen::Matrix3d covariance_3d;
 
 
-  std::shared_ptr<UpdateStep> prev, next;
+  std::shared_ptr<UpdateStep> prev, next;  ///////////////////
 };
 
 
@@ -156,7 +156,7 @@ public:
   LinearFilter();
 //  ~LinearFilter();
 
-  bool initialised = false;
+  bool initialised = false;             ////////////////
   float MINIMUM_INITIALISATION_SPEED = .5;
 
   // use hard coded uncertainty values from python code
@@ -166,13 +166,12 @@ public:
   float POSITION_ERROR = 2.5; // m
 
   Eigen::Vector3d state_odom_only;
-  std::deque<std::shared_ptr<ConditionedState>> states;
+  std::deque<std::shared_ptr<ConditionedState>> states;       //////////////////
 
 
-  float previous_speed = 0.;
+  float previous_speed = 0.;          ///////////////
 
-  bool initialised_filter;
-  double confidence;
+  double confidence;      ////////////
 
   //! Perform the optimisation
 //  void AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covariance, ros::Time stamp);
@@ -183,8 +182,8 @@ public:
   void BoundHeading(const Eigen::Vector3d &current_state, Eigen::Vector3d &observation);
 
 protected:
-  std::shared_ptr<UpdateStep> last_update;
-  std::shared_ptr<PredictStep> last_predict;
+  std::shared_ptr<UpdateStep> last_update;     ////////////////////
+  std::shared_ptr<PredictStep> last_predict;    //////////////////////
 
 };
 
@@ -202,6 +201,7 @@ public:
 
   void AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time &stamp, std::string &source);
   void AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3d& increment_cov, ros::Time &stamp);
+  void reinitialise(Eigen::Vector3d& observation, ros::Time &stamp);
 
   void test_predict();
   void test_update();

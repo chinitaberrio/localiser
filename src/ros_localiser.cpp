@@ -43,7 +43,9 @@ ROSLocaliser::ROSLocaliser() :
 
 
   ros::NodeHandle n;
-  service = n.advertiseService("instruct_localiser", &ROSLocaliser::InstructionCallback, this);
+  instruct_service = n.advertiseService("instruct_localiser", &ROSLocaliser::InstructionCallback, this);
+  reset_service = n.advertiseService("reset_localiser", &ROSLocaliser::ResetCallback, this);
+
 
   //! Read the parameters to determine how the localiser will work
 //  run_pipeline = false;
@@ -206,6 +208,25 @@ ROSLocaliser::connect_layers() {
 
 
 bool
+ROSLocaliser::ResetCallback(localiser::reset_localiser::Request& req,
+    localiser::reset_localiser::Response& res) {
+
+    ROS_WARN_STREAM("RESET_MAP: clear state history and reset map position to " << req.x << " " << req.y << " " << req.yaw );
+    Eigen::Vector3d observation;
+    observation << req.x, req.y, req.yaw;
+    ros::Time stamp = req.stamp;
+    ekf->reinitialise(observation, stamp);
+    // reset to using absolute update
+    ROS_WARN_STREAM("ABS_UPDATE: localiser switched to using GPS updates");
+    bag_source->signal_lat_lon = std::bind(&GNSSObservation::receive_gps, &(*gnss), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5 );
+
+    res.status = true;
+    return true;
+
+}
+
+
+bool
 ROSLocaliser::InstructionCallback(localiser::instruct_localiser::Request& req,
     localiser::instruct_localiser::Response& res) {
 
@@ -269,6 +290,8 @@ using namespace std::placeholders;
          bag_source->signal_SE2 = nullptr;//std::function<void()>();
 
          break;
+
+
 
 
      default:

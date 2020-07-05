@@ -26,7 +26,6 @@ class LocalisationMethod {
 
 public:
   LocalisationMethod() :
-      map_state(Eigen::Vector3d(0.,0.,0.)),
       odom_state(mrpt::poses::CPose2D(0.,0.,0.)),
       previous_prediction_stamp(ros::Time(0.)),
       previous_observation_stamp(ros::Time(0.))
@@ -45,16 +44,14 @@ public:
   std::list<std::function<void(Eigen::Vector3d&, Eigen::Vector3d&,
                                Eigen::Matrix3d&, Eigen::Vector3d&, ros::Time&, std::string&)>> signal_statistics;
 
-  // Current estimate of the robot state (map frame, odom frame)
-  Eigen::Vector3d map_state;
 
   Eigen::Vector3d odom_state_eigen;
   mrpt::poses::CPose2D odom_state;
 
-  ros::Time previous_prediction_stamp;
-  ros::Time previous_observation_stamp;
+  ros::Time previous_prediction_stamp;  /////////////
+  ros::Time previous_observation_stamp;  ////////////
 
-  std::shared_ptr<std::string> last_source;
+  std::shared_ptr<std::string> last_source;   //////////////
 
 };
 

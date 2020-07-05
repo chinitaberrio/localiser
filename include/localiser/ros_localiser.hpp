@@ -16,6 +16,8 @@
 #include "localiser_core/publisher.h"
 
 #include "localiser/instruct_localiser.h"
+#include "localiser/reset_localiser.h"
+
 #include <dataset_tools/LocaliserStats.h>
 
 
@@ -47,10 +49,16 @@ public:
   std::shared_ptr<Publisher> publisher;
 
 
-  ros::ServiceServer service;
+  ros::ServiceServer instruct_service;
+  ros::ServiceServer reset_service;
+
 
   bool InstructionCallback(localiser::instruct_localiser::Request& req,
                            localiser::instruct_localiser::Response& res);
+
+
+  bool ResetCallback(localiser::reset_localiser::Request& req,
+                           localiser::reset_localiser::Response& res);
 
 
 //  bool run_pipeline;

@@ -19,7 +19,6 @@
 LinearFilter::LinearFilter()
 {
   confidence = 1.;
-  initialised_filter = false;
 
   state_odom_only << 0., 0., 0.;
 
@@ -586,6 +585,21 @@ PositionHeadingEKF::jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d inp
 void
 PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time &stamp, std::string &source) {
 
+  if (std::isnan(observation(0)) || std::isnan(observation(1)) ) {
+    if (initialised) {
+        std::string source_bad = source + "-bad";
+        last_source = std::make_shared<std::string>(source_bad);
+    }
+    for (auto &signal_stats : signal_statistics) {
+        Eigen::Vector3d zero_vector;
+        zero_vector.setZero();
+        Eigen::Matrix3d zero_matrix;
+        zero_matrix.setZero();
+        signal_stats(zero_vector, zero_vector, zero_matrix, zero_vector, stamp, *last_source);
+    }
+    return;
+  }
+
   if (!initialised) {
 
 
@@ -678,16 +692,15 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
 void
 PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3d& increment_cov, ros::Time &stamp) {
 
+    // TODO: reject all predict and updates if time stamp is earlier than last time stamp. reject out of sequence msgs.
+
     Eigen::Vector2d delta_state_change;
     delta_state_change << std::hypot(increment[0], increment[1]), increment[2];
     state_odom_only = vehicle_model(state_odom_only, delta_state_change);
 
     Eigen::Matrix3d odom_uncertainty;
+    odom_uncertainty.setZero();
     if (!signal_odom_state.empty()) {
-
-        odom_uncertainty << 0., 0., 0.,
-                            0., 0., 0.,
-                            0., 0., 0.;
         for(auto &signal_odom : signal_odom_state){
             signal_odom(state_odom_only, odom_uncertainty, stamp);
         }
@@ -761,7 +774,7 @@ PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3
   }else{
       for (auto &signal_stat:signal_statistics){
           Eigen::Vector3d innovation;
-          innovation << 0., 0., 0.;
+          innovation.setZero();;
           signal_stat(state_odom_only, innovation, odom_uncertainty, innovation, stamp, *last_source);
       }
 //      ROS_ERROR_STREAM_THROTTLE(1, "predict source: " << *last_source << stamp);
@@ -774,7 +787,29 @@ PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3
 }
 
 
+void
+PositionHeadingEKF::reinitialise(Eigen::Vector3d& observation, ros::Time &stamp){
+    // Add directly, this is the initialisation of the filter, so it is definitely considered valid
+    std::shared_ptr<UpdateStep> update_step = std::make_shared<UpdateStep>();
+    states.clear();
+    states.push_back(update_step);
 
+    update_step->posterior.mean = observation;
+    Eigen::Matrix3d covariance;
+    covariance.setZero(); // zero uncertainty. We are certain about the initial pose
+    update_step->posterior.covariance = covariance;
+
+    update_step->observation.mean = observation;
+    update_step->observation.noise = covariance;
+
+    update_step->valid_individual = true;
+    update_step->valid_sequence = false;
+    update_step->stamp = stamp;
+
+    initialised = true;
+    last_source = std::make_shared<std::string>("reset_dead_reckon");
+    ROS_WARN("reinitialise");
+}
 
 
 
