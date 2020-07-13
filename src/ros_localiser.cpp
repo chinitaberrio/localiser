@@ -276,6 +276,7 @@ using namespace std::placeholders;
 
      case 3://ABS_UPDATE
         ROS_WARN_STREAM("ABS_UPDATE: localiser switched to using GPS updates");
+        bag_source->signal_SE2 = nullptr;
         bag_source->signal_lat_lon = std::bind(&GNSSObservation::receive_gps, &(*gnss), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5 );
 
         break;

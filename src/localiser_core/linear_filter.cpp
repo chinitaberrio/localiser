@@ -140,6 +140,8 @@ UpdateStep::CalculateConsensus(float consensus_window, std::deque<std::shared_pt
   }
 
   if (speed_discrepancy > 0.09 /*|| square_error_sum > 0.02*/) {
+//  if (speed_discrepancy > 9 /*|| square_error_sum > 0.02*/) {
+
     std::cout << "REJECT" << std::endl;
 //    valid_flag = false;
     valid_individual = false;

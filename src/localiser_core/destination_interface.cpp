@@ -62,6 +62,18 @@ DestinationInterface::receive_odom2msg(std::string &frame_id, std::string &topic
         msg.pose.pose.orientation.z = orientation[2];
         msg.pose.pose.orientation.w = orientation[3];
 
+        msg.pose.covariance[0]  = covariance(0,0);
+        msg.pose.covariance[1]  = covariance(0,1);
+        msg.pose.covariance[5]  = covariance(0,2);
+        msg.pose.covariance[6]  = covariance(1,0);
+        msg.pose.covariance[7]  = covariance(1,1);
+        msg.pose.covariance[11]  = covariance(1,2);
+        msg.pose.covariance[30]  = covariance(2,0);
+        msg.pose.covariance[31]  = covariance(2,1);
+        msg.pose.covariance[35]  = covariance(2,2);
+
+
+
       return msg;
 }
 
@@ -156,4 +168,11 @@ DestinationInterface::receive_odom_tf2msg(Eigen::Vector3d &odom_SE2_estimate, ro
     return geom_tf;
 
 }
+
+
+
+
+
+
+
 
