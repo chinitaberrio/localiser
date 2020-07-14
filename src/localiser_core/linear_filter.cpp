@@ -621,7 +621,7 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
 
       initialised = true;
       last_source = std::make_shared<std::string>(source);
-      ROS_WARN("init");
+      ROS_WARN("PositionHeadingEKF initialised");
 
   }
   else {

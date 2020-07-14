@@ -19,12 +19,19 @@
 BagDestination::BagDestination(std::string bag_file_name) {
 
   bag = std::make_shared<rosbag::Bag>();
+  // open bag with write mode
+  // so that a bag is created/truncated
   bag->open(bag_file_name, rosbag::bagmode::Write);
+  // close bag and open again with append operations
+  bag->close();
+  bag->open(bag_file_name, rosbag::bagmode::Append);
 
 }
 
 BagDestination::~BagDestination() {
-  bag->close();
+    if (bag->isOpen()){
+        bag->close();
+    }
 }
 
 
@@ -48,7 +55,6 @@ void BagDestination::write_odom_SE2_msg(std::string &frame_id, std::string &topi
       auto msg = receive_odom2msg(frame_id, topic_name, SE2_estimate, covariance, stamp);
 
       bag->write(topic_name, msg.header.stamp, msg);
-
     }
 }
 

@@ -36,7 +36,6 @@ public:
   void write_odom_tf_msg(Eigen::Vector3d &odom_SE2_estimate, ros::Time &stamp);
 
   std::shared_ptr<rosbag::Bag> bag;
-
 };
 
 

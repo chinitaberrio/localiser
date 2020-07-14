@@ -248,7 +248,6 @@ bool status
 
 
   switch(req.instructionType) {
-using namespace std::placeholders;
      case 0://RESET
         ROS_WARN_STREAM("RESET: localiser reset, reinitialising using GPS");
         bag_source->signal_SE2 = nullptr;
@@ -296,7 +295,7 @@ using namespace std::placeholders;
 
 
      default:
-      res.status = true;
+        res.status = true;
         ROS_WARN_STREAM("Currently undefined localiser instruction type " << int(req.instructionType));
 
   }
