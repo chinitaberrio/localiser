@@ -42,7 +42,7 @@ void BagDestination::write_stats(Eigen::Vector3d &observation, Eigen::Vector3d &
     auto msg = receive_stats2msg(observation, innovation,
                                  covariance, confidence, stamp, source);
 
-    bag->write("statistics", stamp, msg);
+    bag->write("/localiser/statistics", stamp, msg);
   }
 }
 
@@ -64,7 +64,9 @@ void BagDestination::write_map_odom_tf_msg(Eigen::Vector3d &map_SE2_estimate, ro
   auto msg = receive_map_tf2msg(map_SE2_estimate, stamp);
 
   if (bag->isOpen()) {
-    bag->write("/tf", stamp, msg);
+    tf2_msgs::TFMessage transform_msg;
+    transform_msg.transforms.push_back(msg);
+    bag->write("/tf", stamp, transform_msg);
   }
 }
 
@@ -73,7 +75,9 @@ void BagDestination::write_odom_tf_msg(Eigen::Vector3d &odom_SE2_estimate, ros::
   auto msg = receive_odom_tf2msg(odom_SE2_estimate, stamp);
 
   if (bag->isOpen()) {
-    bag->write("/tf", stamp, msg);
+    tf2_msgs::TFMessage transform_msg;
+    transform_msg.transforms.push_back(msg);
+    bag->write("/tf", stamp - ros::Duration(0.00001), transform_msg);
   }
 }
 
