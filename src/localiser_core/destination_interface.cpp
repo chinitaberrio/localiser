@@ -159,7 +159,7 @@ DestinationInterface::receive_odom_tf2msg(Eigen::Vector3d &odom_SE2_estimate, ro
     geom_tf.transform.translation.x = odom_baselink_tf.getOrigin()[0];
     geom_tf.transform.translation.y = odom_baselink_tf.getOrigin()[1];
     geom_tf.transform.translation.z = odom_baselink_tf.getOrigin()[2];
-    geom_tf.header.stamp = stamp - ros::Duration(0.0000001);
+    geom_tf.header.stamp = stamp/* - ros::Duration(0.0000001)*/;
     geom_tf.header.frame_id = odom_baselink_tf.frame_id_;
     geom_tf.child_frame_id = odom_baselink_tf.child_frame_id_;
 //    tf_pub_message.transforms.push_back(geom_tf);
