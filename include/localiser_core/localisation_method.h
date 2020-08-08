@@ -44,6 +44,9 @@ public:
   std::list<std::function<void(Eigen::Vector3d&, Eigen::Vector3d&,
                                Eigen::Matrix3d&, Eigen::Vector3d&, ros::Time&, std::string&)>> signal_statistics;
 
+  //! Callback to publish statistics
+  std::list<std::function<void(Eigen::Vector3d&, Eigen::Vector3d&,
+                               Eigen::Matrix3d&, Eigen::Vector3d&, ros::Time&, std::string&)>> signal_update_stats;
 
   Eigen::Vector3d odom_state_eigen;
   mrpt::poses::CPose2D odom_state;

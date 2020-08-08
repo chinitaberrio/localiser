@@ -29,7 +29,7 @@ public:
   void write_odom_SE2_msg(std::string &frame_id, std::string &topic_name, Eigen::Vector3d &SE2_estimate,
                                Eigen::Matrix3d &covariance, ros::Time &stamp);
 
-  void write_stats(Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
+  void write_stats(std::string &topic_name, Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
                                 Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time &stamp, std::string &source);
 
   void write_map_odom_tf_msg(Eigen::Vector3d &map_SE2_estimate, ros::Time &stamp);

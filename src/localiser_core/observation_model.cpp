@@ -102,8 +102,7 @@
 
           if(fix_status == -1  ||
                   std::hypot(north-previous_north, east - previous_east) < SPEED_THRESHOLD_SQUARED){
-              observation << std::numeric_limits<double>::quiet_NaN(),
-                      std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN();
+              observation << east, north, std::numeric_limits<double>::quiet_NaN();
           }else{
               double heading = atan2(north-previous_north, east - previous_east);
               observation << east, north, heading;

@@ -28,16 +28,16 @@ LinearFilter::LinearFilter()
 void
 LinearFilter::BoundHeading(const Eigen::Vector3d &current_state, Eigen::Vector3d &observation) {
 
+//    std::cout << "observation[2] " << observation[2] << " current_state[2] " << current_state[2];
   while (observation[2] < current_state[2] - M_PI) {
     observation[2] += (2.*M_PI);
   }
   while (observation[2] > current_state[2] + M_PI) {
     observation[2] -= (2.*M_PI);
   }
+
+//  std::cout << " bound observation[2] " << observation[2] << "\n";
 }
-
-
-
 
 
 
@@ -64,6 +64,11 @@ PredictStep::condition(StateEstimate &prior) {
   posterior.covariance = F * P * F.transpose() + G * Q * G.transpose();
   // else
   //   var = F * P * F.transpose();
+
+//  std::cout << "motion noise:\n" << Q
+//            << "\nprior noise:\n" << P
+//            << "\nposterior noise:\n" << posterior.covariance
+//            << "\n\n";
 
   // todo: are there any conditions where the predict should fail ?
   return true;
@@ -139,14 +144,14 @@ UpdateStep::CalculateConsensus(float consensus_window, std::deque<std::shared_pt
 
   }
 
-  if (speed_discrepancy > 0.09 /*|| square_error_sum > 0.02*/) {
+//  if (speed_discrepancy > 0.09 /*|| square_error_sum > 0.02*/) {
 //  if (speed_discrepancy > 9 /*|| square_error_sum > 0.02*/) {
 
-    std::cout << "REJECT" << std::endl;
+//    std::cout << "REJECT" << std::endl;
 //    valid_flag = false;
-    valid_individual = false;
+//    valid_individual = false;
 
-  }
+//  }
 
 
 
@@ -220,6 +225,7 @@ UpdateStep::condition(StateEstimate &prior/*,
   //
   // From Matlab fns Adapted from code by Jose Guivant. Tim Bailey 2003.
 
+  // Pht: P matrix times H matrix's transpose
   Eigen::MatrixXd Pht = P * H.transpose();
 
 
@@ -230,8 +236,11 @@ UpdateStep::condition(StateEstimate &prior/*,
   auto statistic = innovation.array().square().sum();
 
   Eigen::MatrixXd tmp_mat = Pht.llt().matrixU();
-/*  std::cout << "innovation " << innovation << std::endl << std::endl <<
-        "P"  << P << std::endl << std::endl <<
+  std::cout /*<< "v\n" << v
+            << "\ninnovation\n" << innovation*/
+            << "P\n" << P
+            << std::endl; //<< std::endl <<
+ /*       "P"  << P << std::endl << std::endl <<
          "Pht"  << Pht << std::endl << std::endl <<
          "Pht.llt().matrixU()" << tmp_mat <<  std::endl << std::endl <<
          //"Pht.llt().matrixU()" << Pht.llt().matrixU() <<  std::endl << std::endl <<
@@ -241,7 +250,9 @@ UpdateStep::condition(StateEstimate &prior/*,
   boost::math::chi_squared distribution(3);
 
   double chi_confidence = boost::math::cdf(distribution, statistic);
-//  std::cout << "statistic " << std::setprecision(8) << statistic  << ", chi_confidence " << std::setprecision(8) << chi_confidence << std::endl;
+  std::cout << "chi_confidence " << std::setprecision(8) << chi_confidence
+//            << " statistic " << std::setprecision(4) << statistic
+            << std::endl;
 
 
   // Get the 95% confidence interval error ellipse
@@ -255,19 +266,25 @@ UpdateStep::condition(StateEstimate &prior/*,
   chi_95 = chi_95.cwiseAbs();
   Eigen::VectorXd chi_95_percent = v.array() / chi_95.array();
 
-  if (fabs(v(0)) < 2 and fabs(v(1)) < 2) {
+  if (fabs(v(0)) < 1. and fabs(v(1)) < 1.) {
     confidence = 0.95;
   }
-  else if (fabs(v(0)) > 5 or fabs(v(1)) >5) {
-    confidence = 0.99999;
-  }
-  else if (fabs(v(0)) > 25 or fabs(v(1)) > 25) {
-    confidence = 0.999999999;
-  }
+//  else if (fabs(v(0)) < 2 or fabs(v(1)) < 2) {
+//    confidence = 0.999;
+//  }
+//  else if (fabs(v(0)) > 5 or fabs(v(1)) > 5) {
+//    confidence = 0.999999999;
+//  }
 
   if (/*initialised_filter && */chi_confidence > confidence) {
-//    std::cout << "REJECTING SAMPLE " << std::setprecision(8) << chi_confidence << " : " << std::setprecision(8) << confidence << std::endl << " v: " << v << std::endl;
-    //return false;
+    std::cout << "REJECTING SAMPLE "
+              << std::setprecision(8) << chi_confidence << " : "
+              << std::setprecision(8) << confidence << std::endl;
+//              << " v: " << v(0)
+//              << " z: " << z(0)
+//              << " zpred: " << zpred(0)
+//              << std::endl;
+    return false;
   }
 
 //  initialised_filter = true;
@@ -320,23 +337,26 @@ UpdateStep::condition(StateEstimate &prior/*,
 
   // TODO: test for success in cholesky factorisation
   // Cholesky factorisation - take upper triangle
+  // Sc: S matrix's cholesky
   Eigen::MatrixXd Sc = S.llt().matrixU();
 
-  //try {
-  //     auto Sc = np.linalg.cholesky(S));
-  ///////////////////// Eigen::Matrix3d Sci = S.ldlt().solve(Eigen::MatrixXd::Identity(3,3));
-  //    Eigen::Matrix3d Sc = S.ldlt().solve(Eigen::MatrixXd::Identity(3,3));
-  //}
-  //  catch {
-  //    print "Cholesky failed: adding noise"
-  //    noise = np.matrix(np.diag((0.0005, 0.0005, 0.0005)));
-  //    Sc = np.matrix(np.linalg.cholesky(S + noise));
-  //  }
+//  try {
+//       auto Sc = np.linalg.cholesky(S));
+//  /////////////////// Eigen::Matrix3d Sci = S.ldlt().solve(Eigen::MatrixXd::Identity(3,3));
+//      Eigen::Matrix3d Sc = S.ldlt().solve(Eigen::MatrixXd::Identity(3,3));
+//  }
+//    catch {
+//      print "Cholesky failed: adding noise"
+//      noise = np.matrix(np.diag((0.0005, 0.0005, 0.0005)));
+//      Sc = np.matrix(np.linalg.cholesky(S + noise));
+//    }
 
 
   // expecting upper triangle
+  // Sci: Sc matrix's inverse
   Eigen::MatrixXd Sci = Sc.inverse().triangularView<Eigen::Upper>();
 
+  // Wc: kalman gain K
   Eigen::MatrixXd Wc = Pht * Sci;
   Eigen::MatrixXd W = Wc * Sci.transpose();
 
@@ -347,21 +367,14 @@ UpdateStep::condition(StateEstimate &prior/*,
   // P = P - Wc*Wc'
   posterior.covariance = P - Wc * Wc.transpose();
 
-  //std::cout << "W, R, posterior " << W << std::endl << std::endl << R << std::endl << std::endl<< posterior.mean << std::endl << std::endl << posterior.covariance << std::endl << std::endl;
+//  Eigen::MatrixXd Wc2 = Wc * Wc.transpose();
+
+//  std::cout << "Wc2\n " << Wc2
+
+//            << std::endl;
 
   return true;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -587,10 +600,11 @@ PositionHeadingEKF::jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d inp
 void
 PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time &stamp, std::string &source) {
 
-  if (std::isnan(observation(0)) || std::isnan(observation(1)) ) {
+  if (std::isnan(observation(2))) {
     if (initialised) {
         std::string source_bad = source + "-bad";
         last_source = std::make_shared<std::string>(source_bad);
+        ROS_INFO_STREAM_THROTTLE(1, "reject observation due to GPS low speed/no fix" );
     }
     for (auto &signal_stats : signal_statistics) {
         Eigen::Vector3d zero_vector;
@@ -598,6 +612,13 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
         Eigen::Matrix3d zero_matrix;
         zero_matrix.setZero();
         signal_stats(zero_vector, zero_vector, zero_matrix, zero_vector, stamp, *last_source);
+    }
+    for (auto &signal_stats : signal_update_stats) {
+        Eigen::Vector3d zero_vector;
+        zero_vector.setZero();
+        Eigen::Matrix3d zero_matrix;
+        zero_matrix.setZero();
+        signal_stats(observation, zero_vector, covariance, zero_vector, stamp, *last_source);
     }
     return;
   }
@@ -626,8 +647,8 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
   }
   else {
     // The observations are generally older than the latest relative motion estimate
-    //float delta_time = (stamp - prior_stamp).toSec();
-    //predict(motion * delta_time, covariance);
+//    float delta_time = (stamp - prior_stamp).toSec();
+//    predict(motion * delta_time, covariance);
     StateEstimate &prior = states.back()->posterior;
     std::shared_ptr<UpdateStep> update_step = std::make_shared<UpdateStep>();
     update_step->observation.mean = observation;
@@ -640,17 +661,7 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
     update_step->valid_sequence = false;
     update_step->stamp = stamp;
 
-//    // Override covariance with fixed values
-//    Eigen::Matrix3d R; // observation noise
 
-//    // calculate noise R
-//    R << POSITION_ERROR, 0., 0.,
-//        0., POSITION_ERROR, 0.,
-//        0., 0., HEADING_ERROR;
-
-//    R = R.array().square();
-
-//    update_step->observation.noise = R;
 
 //    Eigen::MatrixXd H = Eigen::MatrixXd(2,3);
     update_step->observation.observation_matrix = Eigen::MatrixXd(3,3);
@@ -659,7 +670,7 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
                                                     0., 0., 1.;
 
 
-    // generate a linked list of predict steps
+    // connect update_step to linked list of update steps
     if (last_update) {
       last_update->next = update_step;
       update_step->prev = last_update;
@@ -667,25 +678,31 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
 
     last_update = update_step;
 
-    update_step->CalculateConsensus(3.5, states);
+//    update_step->CalculateConsensus(1.0, states);
 
     if (update_step->condition(prior)) {
       last_source = std::make_shared<std::string>(source);
+      states.push_back(update_step);
     }
     else {
-      std::string source_bad = source + "-bad";
+      std::string source_bad = source + "-reject";
       last_source = std::make_shared<std::string>(source_bad);
     }
 
     for (auto &signal_stats : signal_statistics) {
-      signal_stats(update_step->posterior.mean, update_step->v_3d, update_step->covariance_3d, update_step->chi_95_3d, update_step->stamp, *last_source);
+      signal_stats(update_step->posterior.mean, update_step->v_3d, update_step->covariance_3d,
+                   update_step->chi_95_3d, update_step->stamp, *last_source);
+    }
+
+    for (auto &signal_stats : signal_update_stats) {
+      signal_stats(observation, update_step->v_3d, covariance,
+                   update_step->chi_95_3d, update_step->stamp, *last_source);
     }
 
     ROS_INFO_STREAM_THROTTLE(1, "update source: " << *last_source);
 
-    states.push_back(update_step);
-  }
 
+  }
 
 }
 
@@ -737,7 +754,7 @@ PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3
     predict_step->motion.noise *= delta_time;
     predict_step->motion.noise = predict_step->motion.noise.array().square();
 
-    // generate a linked list of predict steps
+    // connect to a linked list of predict steps
     if (last_predict) {
       last_predict->next = predict_step;
       predict_step->prev = last_predict;

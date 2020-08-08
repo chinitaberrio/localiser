@@ -86,13 +86,13 @@ public:
 private:
 
   double previous_east, previous_north;
-  const double RTK_COVARIANCE_THRESHOLD = 0.001;
-  const double SPEED_THRESHOLD_SQUARED = pow(2. / 3.6, 2); // 2km/h
+  const double RTK_COVARIANCE_THRESHOLD = pow(0.25, 2);
+  const double SPEED_THRESHOLD_SQUARED = pow(1.0 / 3.6, 2); // 2km/h
 
   const double POSITION_COVARIANCE_GNSS = pow(2.5, 2);
-  const double POSITION_COVARIANCE_RTK = pow(0.5, 2);
-  const double HEADING_COVARIANCE_GNSS = pow(2. * (3.1417/180.), 2);
-  const double HEADING_COVARIANCE_RTK = pow(0.5 * (3.1417/180.), 2);
+  const double POSITION_COVARIANCE_RTK = pow(0.25, 2);
+  const double HEADING_COVARIANCE_GNSS = pow(50. * (3.1417/180.), 2);
+  const double HEADING_COVARIANCE_RTK = pow(3. * (3.1417/180.), 2);
 
 };
 

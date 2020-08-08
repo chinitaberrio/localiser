@@ -35,7 +35,7 @@ void Publisher::write_odom_SE2_msg(std::string &frame_id, std::string &topic_nam
 }
 
 
-void Publisher::write_stats(Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
+void Publisher::write_stats(std::string &topic_name, Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
                               Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time &stamp, std::string &source) {
 
 
@@ -44,7 +44,7 @@ void Publisher::write_stats(Eigen::Vector3d &observation, Eigen::Vector3d &innov
 //    ROS_ERROR_STREAM_THROTTLE(1, "publish stat source: " << source);
 
 
-    publishers["statistics"].publish(msg);
+    publishers[topic_name].publish(msg);
 
 
 

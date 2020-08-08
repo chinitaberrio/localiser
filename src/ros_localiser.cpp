@@ -173,7 +173,7 @@ ROSLocaliser::connect_layers() {
         ekf->signal_map_state.push_back(std::bind(&Publisher::write_odom_SE2_msg, publisher, std::string("utm"), std::string("utm"), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
         ekf->signal_map_state.push_back(std::bind(&Publisher::write_map_odom_tf_msg, publisher,  std::placeholders::_1, std::placeholders::_3));
 
-        ekf->signal_statistics.push_back(std::bind(&Publisher::write_stats, publisher, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
+        ekf->signal_statistics.push_back(std::bind(&Publisher::write_stats, publisher, std::string("statistics"), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
     }
 
     // connect bag writers
@@ -186,7 +186,8 @@ ROSLocaliser::connect_layers() {
       ekf->signal_map_state.push_back(std::bind(&BagDestination::write_odom_SE2_msg, bag_destination, std::string("utm"), std::string("/localiser/utm"), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
       ekf->signal_map_state.push_back(std::bind(&BagDestination::write_map_odom_tf_msg, bag_destination,  std::placeholders::_1, std::placeholders::_3));
 
-      ekf->signal_statistics.push_back(std::bind(&BagDestination::write_stats, bag_destination, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
+      ekf->signal_update_stats.push_back(std::bind(&BagDestination::write_stats, bag_destination, std::string("/localiser/update_stats"), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
+      ekf->signal_statistics.push_back(std::bind(&BagDestination::write_stats, bag_destination, std::string("/localiser/statistics"), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
     }
 
 

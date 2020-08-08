@@ -35,14 +35,14 @@ BagDestination::~BagDestination() {
 }
 
 
-void BagDestination::write_stats(Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
+void BagDestination::write_stats(std::string &topic_name, Eigen::Vector3d &observation, Eigen::Vector3d &innovation,
                               Eigen::Matrix3d &covariance, Eigen::Vector3d &confidence, ros::Time &stamp, std::string &source){
 
   if (bag->isOpen()){
     auto msg = receive_stats2msg(observation, innovation,
                                  covariance, confidence, stamp, source);
 
-    bag->write("/localiser/statistics", stamp, msg);
+    bag->write(topic_name, stamp, msg);
   }
 }
 
