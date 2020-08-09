@@ -31,6 +31,8 @@ void MotionModel::calculate_pose_increment(ros::Time stamp) {
 
     Eigen::Vector2d delta_state_change = motion * delta_time;
 
+//    std::cout << "dxy: " << delta_state_change(0) << " dyaw: " << delta_state_change(1) << std::endl;
+
     // not using covariance parsed from rosmsg, as rosmsg covariance is a fixed small value, we don't trust it
     // using our own fixed larger covariance
     Eigen::Matrix2d motion_noise;
@@ -74,6 +76,9 @@ MotionModel::vehicle_model(double distance_travelled, double delta_heading){
   posterior_in_prior_frame[0] =  distance_travelled * cos(av_heading);
   posterior_in_prior_frame[1] =  distance_travelled * sin(av_heading);
   posterior_in_prior_frame[2] =  delta_heading;
+
+//  std::cout << "dx: " << posterior_in_prior_frame(0) << " dy: " << posterior_in_prior_frame(1) << std::endl;
+
 
   return posterior_in_prior_frame;
 }

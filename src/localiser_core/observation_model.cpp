@@ -84,11 +84,10 @@
             covariance << POSITION_COVARIANCE_RTK, 0., 0.,
                 0., POSITION_COVARIANCE_RTK, 0.,
                 0., 0., HEADING_COVARIANCE_RTK;
-          }
-          else if(msg_cov <= POSITION_COVARIANCE_GNSS){
-            covariance << POSITION_COVARIANCE_GNSS, 0., 0.,
-                0., POSITION_COVARIANCE_GNSS, 0.,
-                0., 0., HEADING_COVARIANCE_GNSS;
+//          }else if(msg_cov <= POSITION_COVARIANCE_GNSS){
+//            covariance << POSITION_COVARIANCE_GNSS, 0., 0.,
+//                0., POSITION_COVARIANCE_GNSS, 0.,
+//                0., 0., HEADING_COVARIANCE_GNSS;
           }else{
               covariance << msg_cov, 0., 0.,
                   0., msg_cov, 0.,
@@ -100,8 +99,8 @@
 
           Eigen::Vector3d observation;
 
-          if(fix_status == -1  ||
-                  std::hypot(north-previous_north, east - previous_east) < SPEED_THRESHOLD_SQUARED){
+          if(fix_status == -1
+             || std::hypot(north-previous_north, east - previous_east) < SPEED_THRESHOLD_SQUARED){
               observation << east, north, std::numeric_limits<double>::quiet_NaN();
           }else{
               double heading = atan2(north-previous_north, east - previous_east);

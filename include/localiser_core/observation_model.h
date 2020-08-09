@@ -91,7 +91,7 @@ private:
 
   const double POSITION_COVARIANCE_GNSS = pow(2.5, 2);
   const double POSITION_COVARIANCE_RTK = pow(0.25, 2);
-  const double HEADING_COVARIANCE_GNSS = pow(50. * (3.1417/180.), 2);
+  const double HEADING_COVARIANCE_GNSS = pow(10. * (3.1417/180.), 2);
   const double HEADING_COVARIANCE_RTK = pow(3. * (3.1417/180.), 2);
 
 };

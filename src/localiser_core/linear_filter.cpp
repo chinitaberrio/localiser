@@ -266,9 +266,9 @@ UpdateStep::condition(StateEstimate &prior/*,
   chi_95 = chi_95.cwiseAbs();
   Eigen::VectorXd chi_95_percent = v.array() / chi_95.array();
 
-  if (fabs(v(0)) < 1. and fabs(v(1)) < 1.) {
-    confidence = 0.95;
-  }
+//  if (fabs(v(0)) < 1. and fabs(v(1)) < 1.) {
+//    confidence = 0.95;
+//  }
 //  else if (fabs(v(0)) < 2 or fabs(v(1)) < 2) {
 //    confidence = 0.999;
 //  }
@@ -519,6 +519,8 @@ PositionHeadingEKF::vehicle_model(const Eigen::Vector3d &mean, const Eigen::Vect
   posterior[1] = mean[1] + input_state[0] * sin(av_heading);
   posterior[2] = mean[2] + input_state[1];
 
+//  std::cout <<"x: "<< posterior[0] <<" y: "<< posterior[1] <<" dxy: "<< input_state[0]<< " in KF\n";
+
   return posterior;
 }
 
@@ -599,6 +601,11 @@ PositionHeadingEKF::jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d inp
 
 void
 PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time &stamp, std::string &source) {
+
+    // if vehicle is reverse driving, vehicle heading should be opposite of differential GPS heading
+    if(source == "gnss" && previous_speed < 0.){
+        observation(2) = observation(2) + M_PI; // 180 degrees off with true heading
+    }
 
   if (std::isnan(observation(2))) {
     if (initialised) {
@@ -715,6 +722,9 @@ PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3
 
     Eigen::Vector2d delta_state_change;
     delta_state_change << std::hypot(increment[0], increment[1]), increment[2];
+    // if x is negative, vehcle is going in reverse, speed is assigned negative sign
+    if (increment[0] < 0.)
+        delta_state_change(0) = -delta_state_change(0);
     state_odom_only = vehicle_model(state_odom_only, delta_state_change);
 
     Eigen::Matrix3d odom_uncertainty;
