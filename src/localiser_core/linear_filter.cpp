@@ -266,12 +266,12 @@ UpdateStep::condition(StateEstimate &prior/*,
   chi_95 = chi_95.cwiseAbs();
   Eigen::VectorXd chi_95_percent = v.array() / chi_95.array();
 
-//  if (fabs(v(0)) < 1. and fabs(v(1)) < 1.) {
-//    confidence = 0.95;
-//  }
-//  else if (fabs(v(0)) < 2 or fabs(v(1)) < 2) {
-//    confidence = 0.999;
-//  }
+  if (fabs(v(0)) < 0.5 and fabs(v(1)) < 0.5) {
+    confidence = 0.95;
+  }
+  else if (fabs(v(0)) < 2 or fabs(v(1)) < 2) {
+    confidence = 0.999;
+  }
 //  else if (fabs(v(0)) > 5 or fabs(v(1)) > 5) {
 //    confidence = 0.999999999;
 //  }
@@ -607,7 +607,7 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
         observation(2) = observation(2) + M_PI; // 180 degrees off with true heading
     }
 
-  if (std::isnan(observation(2))) {
+  if (std::isnan(observation(2)) || previous_speed < 1.0) {
     if (initialised) {
         std::string source_bad = source + "-bad";
         last_source = std::make_shared<std::string>(source_bad);
@@ -725,6 +725,8 @@ PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3
     // if x is negative, vehcle is going in reverse, speed is assigned negative sign
     if (increment[0] < 0.)
         delta_state_change(0) = -delta_state_change(0);
+
+    previous_speed = 100 * delta_state_change[0];
     state_odom_only = vehicle_model(state_odom_only, delta_state_change);
 
     Eigen::Matrix3d odom_uncertainty;
@@ -754,7 +756,7 @@ PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3
     predict_step->valid_individual = true;
     predict_step->valid_sequence = true;
 
-    predict_step->motion.mean << std::hypot(increment[0], increment[1]), increment[2];
+    predict_step->motion.mean = delta_state_change;
 
     //Eigen::Matrix2d Q; //process noise
     predict_step->motion.noise << VELOCITY_NOISE, 0.,
@@ -810,9 +812,6 @@ PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3
 
   }
 
-
-  // todo: replace this with the last predict step motion
-  previous_speed = 100 * delta_state_change[0];
 }
 
 

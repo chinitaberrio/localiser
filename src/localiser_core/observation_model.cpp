@@ -100,7 +100,7 @@
           Eigen::Vector3d observation;
 
           if(fix_status == -1
-             || std::hypot(north-previous_north, east - previous_east) < SPEED_THRESHOLD_SQUARED){
+             /*|| std::hypot(north-previous_north, east - previous_east) < SPEED_THRESHOLD*/){
               observation << east, north, std::numeric_limits<double>::quiet_NaN();
           }else{
               double heading = atan2(north-previous_north, east - previous_east);
