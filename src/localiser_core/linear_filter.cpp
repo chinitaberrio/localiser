@@ -233,6 +233,8 @@ UpdateStep::condition(StateEstimate &prior/*,
   //Eigen::Matrix3d innovation = factorised_variance.solve(v);
   Eigen::MatrixXd innovation = Pht.llt().matrixU().solve(v);
 
+
+  innovation(2,0) = 0.;
   auto statistic = innovation.array().square().sum();
 
   Eigen::MatrixXd tmp_mat = Pht.llt().matrixU();
@@ -251,7 +253,7 @@ UpdateStep::condition(StateEstimate &prior/*,
 
   double chi_confidence = boost::math::cdf(distribution, statistic);
   std::cout << "chi_confidence " << std::setprecision(8) << chi_confidence
-//            << " statistic " << std::setprecision(4) << statistic
+            << "\ninnovation\n" << std::setprecision(4) << innovation
             << std::endl;
 
 
@@ -269,17 +271,17 @@ UpdateStep::condition(StateEstimate &prior/*,
   if (fabs(v(0)) < 0.5 and fabs(v(1)) < 0.5) {
     confidence = 0.95;
   }
-  else if (fabs(v(0)) < 2 or fabs(v(1)) < 2) {
-    confidence = 0.999;
-  }
+//  else if (fabs(v(0)) < 2 or fabs(v(1)) < 2) {
+//    confidence = 0.999;
+//  }
 //  else if (fabs(v(0)) > 5 or fabs(v(1)) > 5) {
 //    confidence = 0.999999999;
 //  }
 
   if (/*initialised_filter && */chi_confidence > confidence) {
     std::cout << "REJECTING SAMPLE "
-              << std::setprecision(8) << chi_confidence << " : "
-              << std::setprecision(8) << confidence << std::endl;
+              << std::setprecision(10) << chi_confidence << " : "
+              << std::setprecision(10) << confidence << std::endl;
 //              << " v: " << v(0)
 //              << " z: " << z(0)
 //              << " zpred: " << zpred(0)
@@ -607,11 +609,11 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
         observation(2) = observation(2) + M_PI; // 180 degrees off with true heading
     }
 
-  if (std::isnan(observation(2)) || previous_speed < 1.0) {
+  if (std::isnan(observation(2)) || previous_speed < 0.5) {
     if (initialised) {
         std::string source_bad = source + "-bad";
         last_source = std::make_shared<std::string>(source_bad);
-        ROS_INFO_STREAM_THROTTLE(1, "reject observation due to GPS low speed/no fix" );
+        ROS_INFO_STREAM_THROTTLE(1, "reject observation due to low speed/no GPS fix" );
     }
     for (auto &signal_stats : signal_statistics) {
         Eigen::Vector3d zero_vector;
