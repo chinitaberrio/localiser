@@ -5,7 +5,32 @@ bag_input and bag_output need to be placed in different folders !!
 
 This is currently a bug that will be fixed.
 
-## gps_filter rosnode
+## offline gps_filter rosnode
+subscribe to ros topics. Localises base on GPS updates and IMU+encoder prediction.
+
+self sufficient. does not interact with behavior tree
+
+when bag_input arguments are left blank, gps_filter node run in online mode.
+
+
+example usage:
+```
+In terminal 1:
+roslaunch zio_maps zio_maps.launch
+
+In terminal 2:
+roslaunch localiser gps_filter.launch
+```
+
+required topics:
+```
+/ublox_gps/fix
+/vn100/imu
+/zio/odometry/rear
+```
+
+
+## offline gps_filter rosnode
 Reads in ros msgs from a rosbag. Localises base on GPS updates and prediction.
 
 run as fast as possible.
@@ -14,7 +39,7 @@ If want to run in near real time, set limit_playback_speed to true in gps_filter
 
 self sufficient. does not interact with behavior tree
 
-bag_input and bag_output arguments are required.
+bag_input and bag_output arguments are required to run in offline bag read mode.
 
 
 example usage:
