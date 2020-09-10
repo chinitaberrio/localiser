@@ -5,7 +5,7 @@ bag_input and bag_output need to be placed in different folders !!
 
 This is currently a bug that will be fixed.
 
-## offline gps_filter rosnode
+## online gps_filter rosnode
 subscribe to ros topics. Localises base on GPS updates and IMU+encoder prediction.
 
 self sufficient. does not interact with behavior tree
