@@ -19,6 +19,7 @@
   <depend>tf</depend>
   <depend>mrpt_bridge</depend>
   <depend>gps_common</depend>
+  <depend>libg2o</depend>
   <depend>std_msgs</depend>
   <depend>cv_bridge</depend>
   <depend>custom_point_types</depend>
