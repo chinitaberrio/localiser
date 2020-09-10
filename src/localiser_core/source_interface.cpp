@@ -8,6 +8,25 @@ SourceInterface::SourceInterface() : datum_x(0.), datum_y(0.)
 
 void SourceInterface::receive_IMU_msg(const sensor_msgs::Imu::ConstPtr& msg) {
 
+//    tf::TransformListener transform_listener;
+
+//    tf::StampedTransform transform;
+//    try {
+//      transform_listener.lookupTransform( "imu_link", "gmsl_centre_link", ros::Time(0), transform);
+//        auto origin = transform.getOrigin();
+//        auto basis = transform.getBasis();
+
+//        std::cout << origin.x() << " " << origin.y() << " " << origin.z() << std::endl
+//                     << basis.getRow(0).x() << " " << basis.getRow(0).y() << " " << basis.getRow(0).z() << std::endl
+//                     << basis.getRow(1).x() << " " << basis.getRow(1).y() << " " << basis.getRow(1).z() << std::endl
+//                     << basis.getRow(2).x() << " " << basis.getRow(2).y() << " " << basis.getRow(2).z() << std::endl;
+//    }
+//    catch (tf::TransformException &ex) {
+//      ROS_ERROR("%s",ex.what());
+//    }
+
+
+
   if (signal_pitch) {
     tf2::Quaternion orientation_tf;
     tf2::convert(msg->orientation, orientation_tf);
@@ -101,3 +120,36 @@ void SourceInterface::receive_pointcloud_msg(const sensor_msgs::PointCloud2::Con
 }
 
 
+void SourceInterface::receive_reset_msg(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg){
+
+    if(signal_reset){
+
+        if (datum_x == 0. || datum_y == 0.) {
+
+          tf::StampedTransform transform;
+          try {
+            transform_listener.lookupTransform("utm", "map", ros::Time(0), transform);
+            datum_x = transform.getOrigin().x();
+            datum_y = transform.getOrigin().y();
+          }
+          catch (tf::TransformException &ex) {
+            ROS_ERROR("%s",ex.what());
+          }
+
+        }
+
+        tf2::Quaternion orientation_tf;
+        tf2::convert(msg->pose.pose.orientation, orientation_tf);
+        tf2::Matrix3x3 mat(orientation_tf);
+        double roll, pitch, yaw;
+        mat.getRPY(roll, pitch, yaw);
+
+        Eigen::Vector3d observation;
+        observation << msg->pose.pose.position.x + datum_x, msg->pose.pose.position.y + datum_y, yaw;
+        ros::Time stamp = msg->header.stamp;
+        ROS_WARN_STREAM("RESET_MAP: clear state history and reset map position to "
+                        << observation(0) << " " << observation(1) << " " << observation(2) );
+        signal_reset(observation, stamp);
+    }
+
+}

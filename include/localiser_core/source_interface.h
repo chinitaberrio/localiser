@@ -11,6 +11,7 @@
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/NavSatFix.h>
+#include <ublox_msgs/NavPVT.h>
 #include <sensor_msgs/PointCloud2.h>
 
 #include <tf2/transform_datatypes.h>
@@ -43,9 +44,13 @@ public:
     void receive_odom_SE2_msg(const nav_msgs::Odometry::ConstPtr& msg);
     std::function<void(double, double, double, ros::Time)> signal_SE2;
 
-    // GPS
+    // GPS fix
     void receive_fix_msg(const sensor_msgs::NavSatFix::ConstPtr& msg);
     std::function<void(double, double, int, double, ros::Time)> signal_lat_lon;
+
+    // reset msgs
+    void receive_reset_msg(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg);
+    std::function<void(Eigen::Vector3d& observation, ros::Time& stamp)> signal_reset;
 
 
     // point clouds

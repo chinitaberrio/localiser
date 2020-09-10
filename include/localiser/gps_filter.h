@@ -16,7 +16,7 @@
 #include "localiser_core/bag_destination.h"
 #include "localiser_core/publisher.h"
 
-#include "localiser/instruct_localiser.h"
+#include "localiser/reset_localiser.h"
 #include <dataset_tools/LocaliserStats.h>
 
 
@@ -26,8 +26,11 @@ class GpsFilter
 public:
     GpsFilter();
 
+private:
 
-    void connect_layers();
+    void connect_layers_online();
+    void connect_layers_offline();
+
 
     std::shared_ptr<BagSource> bag_source;
 

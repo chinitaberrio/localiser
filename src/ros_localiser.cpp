@@ -163,6 +163,9 @@ ROSLocaliser::connect_layers() {
         ROS_INFO("[OUTPUT] publishing to topics ");
         publisher->odom_SE2_topics.push_back(std::string("odometry"));
         publisher->odom_SE2_topics.push_back(std::string("utm"));
+        publisher->stats_topics.push_back(std::string("update_stats"));
+        publisher->stats_topics.push_back(std::string("statistics"));
+
 
         publisher->advertise_topics();
 

@@ -18,10 +18,7 @@
 
 LinearFilter::LinearFilter()
 {
-  confidence = 1.;
-
-  state_odom_only << 0., 0., 0.;
-
+   state_odom_only << 0., 0., 0.;
 }
 
 
@@ -176,7 +173,7 @@ UpdateStep::condition(StateEstimate &prior/*,
     return false;
   }
   // todo: need to find where this goes
-  double confidence = 1.;
+//  double confidence = 1.;
 
 /*LinearFilterAbsoluteSample &prior,
                  const Eigen::VectorXd &observation,
@@ -238,10 +235,10 @@ UpdateStep::condition(StateEstimate &prior/*,
   auto statistic = innovation.array().square().sum();
 
   Eigen::MatrixXd tmp_mat = Pht.llt().matrixU();
-  std::cout /*<< "v\n" << v
-            << "\ninnovation\n" << innovation*/
-            << "P\n" << P
-            << std::endl; //<< std::endl <<
+//  std::cout /*<< "v\n" << v
+//            << "\ninnovation\n" << innovation*/
+//            << "P\n" << P
+//            << std::endl; //<< std::endl <<
  /*       "P"  << P << std::endl << std::endl <<
          "Pht"  << Pht << std::endl << std::endl <<
          "Pht.llt().matrixU()" << tmp_mat <<  std::endl << std::endl <<
@@ -252,9 +249,8 @@ UpdateStep::condition(StateEstimate &prior/*,
   boost::math::chi_squared distribution(3);
 
   double chi_confidence = boost::math::cdf(distribution, statistic);
-  std::cout << "chi_confidence " << std::setprecision(8) << chi_confidence
-            << "\ninnovation\n" << std::setprecision(4) << innovation
-            << std::endl;
+//  std::cout << "\ninnovation\n" << std::setprecision(4) << innovation
+//            << std::endl;
 
 
   // Get the 95% confidence interval error ellipse
@@ -268,26 +264,34 @@ UpdateStep::condition(StateEstimate &prior/*,
   chi_95 = chi_95.cwiseAbs();
   Eigen::VectorXd chi_95_percent = v.array() / chi_95.array();
 
+
   if (fabs(v(0)) < 0.5 and fabs(v(1)) < 0.5) {
-    confidence = 0.95;
+    next_confidence = 0.9999;
   }
 //  else if (fabs(v(0)) < 2 or fabs(v(1)) < 2) {
 //    confidence = 0.999;
 //  }
+  else {
 //  else if (fabs(v(0)) > 5 or fabs(v(1)) > 5) {
-//    confidence = 0.999999999;
-//  }
+    next_confidence = 0.999999999;
+  }
+
 
   if (/*initialised_filter && */chi_confidence > confidence) {
-    std::cout << "REJECTING SAMPLE "
-              << std::setprecision(10) << chi_confidence << " : "
-              << std::setprecision(10) << confidence << std::endl;
+//    std::cout << "REJECTING SAMPLE "
+//              << std::setprecision(10) << chi_confidence << " : "
+//              << std::setprecision(10) << confidence << std::endl;
 //              << " v: " << v(0)
 //              << " z: " << z(0)
 //              << " zpred: " << zpred(0)
 //              << std::endl;
     return false;
   }
+
+//  std::cout << "INCORPORATING SAMPLE "
+//            << std::setprecision(10) << chi_confidence << " : "
+//            << std::setprecision(10) << confidence << std::endl;
+
 
 //  initialised_filter = true;
 
@@ -377,8 +381,6 @@ UpdateStep::condition(StateEstimate &prior/*,
 
   return true;
 }
-
-
 
 
 
@@ -605,15 +607,51 @@ void
 PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Matrix3d& covariance, ros::Time &stamp, std::string &source) {
 
     // if vehicle is reverse driving, vehicle heading should be opposite of differential GPS heading
-    if(source == "gnss" && previous_speed < 0.){
+    // find substring "gnss" in update source. if return is not end of string
+    size_t found_gnss = source.find("gnss");
+    size_t found_rtkFix = source.find("rtkFix");
+
+    if(found_gnss != std::string::npos  && previous_speed < 0.){
         observation(2) = observation(2) + M_PI; // 180 degrees off with true heading
     }
 
-  if (std::isnan(observation(2)) || previous_speed < 0.5) {
+  if (std::isnan(observation(2)) || (abs(previous_speed) < 0.1 && found_rtkFix == std::string::npos)) {
+
+    observation(2) = 0.;
+
     if (initialised) {
-        std::string source_bad = source + "-bad";
-        last_source = std::make_shared<std::string>(source_bad);
+        if (abs(previous_speed) < 0.1)
+            last_source = std::make_shared<std::string>(source + "-slow");
+        else
+            last_source = std::make_shared<std::string>(source);
         ROS_INFO_STREAM_THROTTLE(1, "reject observation due to low speed/no GPS fix" );
+
+        // Add directly, this is the initialisation of the filter, so it is definitely considered valid
+        std::shared_ptr<UpdateStep> update_step = std::make_shared<UpdateStep>();
+
+        update_step->posterior.mean = states.back()->posterior.mean;
+        update_step->posterior.covariance = states.back()->posterior.covariance;
+
+//        std::cout << "posterior.mean:\n" << update_step->posterior.mean;
+
+        update_step->observation.mean = observation;
+        update_step->observation.noise = covariance;
+
+        update_step->valid_individual = false;
+        update_step->valid_sequence = false;
+        update_step->stamp = stamp;
+
+        // connect update_step to linked list of update steps
+        if (last_update) {
+          last_update->next = update_step;
+          update_step->prev = last_update;
+
+          update_step->confidence = last_update->next_confidence;
+          update_step->next_confidence = last_update->next_confidence;
+        }
+
+        states.push_back(update_step);
+        last_update = update_step;
     }
     for (auto &signal_stats : signal_statistics) {
         Eigen::Vector3d zero_vector;
@@ -685,9 +723,15 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
       update_step->prev = last_update;
     }
 
-    last_update = update_step;
-
 //    update_step->CalculateConsensus(1.0, states);
+
+
+    if(found_rtkFix != std::string::npos){
+        update_step->confidence = 1.;
+    }else if (last_update) {
+        update_step->confidence = last_update->next_confidence;
+    }
+
 
     if (update_step->condition(prior)) {
       last_source = std::make_shared<std::string>(source);
@@ -708,8 +752,9 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
                    update_step->chi_95_3d, update_step->stamp, *last_source);
     }
 
-    ROS_INFO_STREAM_THROTTLE(1, "update source: " << *last_source);
+//    ROS_INFO_STREAM("update source: " << *last_source);
 
+    last_update = update_step;
 
   }
 

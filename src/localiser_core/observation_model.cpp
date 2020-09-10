@@ -107,7 +107,22 @@
               observation << east, north, heading;
           }
 
-          std::string source = "gnss";
+          std::string source;
+          if(fix_status == 2){
+              source = "gnss-rtkFix";
+          }else if(fix_status == -1){
+              source = "gnss-bad";
+          }else if(fix_status == 0){
+              source = "gnss";
+          }else if(fix_status == 1){
+              source = "gnss-diff";
+          }else if(fix_status == 3){
+              source = "gnss-rtkFloat";
+          }else{
+              source = "gnss-unknown";
+          }
+
+
           // send update to localiser method
           signal_update(observation, covariance, stamp, source);
 

@@ -15,9 +15,10 @@ void Publisher::advertise_topics(){
     }
 
     // advertise and insert statistics topic
-    ros::Publisher pub = nh.advertise<dataset_tools::LocaliserStats>("statistics", 1);
-    publishers.insert({"statistics", pub});
-
+    for(auto stats_topic : stats_topics){
+        ros::Publisher pub = nh.advertise<dataset_tools::LocaliserStats>(stats_topic, 1);
+        publishers.insert({stats_topic, pub});
+    }
 
 }
 

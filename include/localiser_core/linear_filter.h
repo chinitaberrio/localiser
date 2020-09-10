@@ -145,6 +145,9 @@ public:
   Eigen::Vector3d chi_95_3d;
   Eigen::Matrix3d covariance_3d;
 
+  double confidence = 1.;
+  double next_confidence = 1.;
+
 
   std::shared_ptr<UpdateStep> prev, next;  ///////////////////
 };
@@ -161,7 +164,7 @@ public:
 
   // use hard coded uncertainty values from python code
   float VELOCITY_NOISE = 12.5; // m/s
-  float YAWRATE_NOISE = 10. * (3.1415 / 180.0); // deg/s
+  float YAWRATE_NOISE = 20. * (3.1415 / 180.0); // deg/s
   float HEADING_ERROR = 2. * (3.1415 / 180.0);// deg
   float POSITION_ERROR = 2.5; // m
 
@@ -171,7 +174,7 @@ public:
 
   float previous_speed = 0.;          ///////////////
 
-  double confidence;      ////////////
+//  double confidence;      ////////////
 
   //! Perform the optimisation
 //  void AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& covariance, ros::Time stamp);

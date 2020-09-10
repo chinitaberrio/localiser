@@ -43,6 +43,7 @@ public:
   tf::TransformBroadcaster transform_broadcaster;
 
   std::vector<std::string> odom_SE2_topics;
+  std::vector<std::string> stats_topics;
   std::map<std::string, ros::Publisher> publishers;
 
 
