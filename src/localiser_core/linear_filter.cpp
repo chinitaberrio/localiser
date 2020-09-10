@@ -233,6 +233,8 @@ UpdateStep::condition(StateEstimate &prior/*,
 
   innovation(2,0) = 0.;
   auto statistic = innovation.array().square().sum();
+  if(std::isnan(statistic))
+      statistic = 10000.;
 
   Eigen::MatrixXd tmp_mat = Pht.llt().matrixU();
 //  std::cout /*<< "v\n" << v
@@ -247,10 +249,10 @@ UpdateStep::condition(StateEstimate &prior/*,
         "innovation sum" << innovation.array().square().sum() << std::endl << std::endl;
   */
   boost::math::chi_squared distribution(3);
+  std::cout << "statistic\n" << std::setprecision(4) << statistic
+            << std::endl;
 
   double chi_confidence = boost::math::cdf(distribution, statistic);
-//  std::cout << "\ninnovation\n" << std::setprecision(4) << innovation
-//            << std::endl;
 
 
   // Get the 95% confidence interval error ellipse
