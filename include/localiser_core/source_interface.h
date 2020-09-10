@@ -11,7 +11,6 @@
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/NavSatFix.h>
-#include <ublox_msgs/NavPVT.h>
 #include <sensor_msgs/PointCloud2.h>
 
 #include <tf2/transform_datatypes.h>
