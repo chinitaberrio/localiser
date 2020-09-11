@@ -121,7 +121,7 @@
               source = "gnss-unknown";
           }
 
-          ROS_WARN_STREAM(source << " speed " << std::hypot(north-previous_north, east - previous_east) * 10 );
+//          ROS_WARN_STREAM(source << " speed " << std::hypot(north-previous_north, east - previous_east) * 10 );
 
 
           // send update to localiser method
