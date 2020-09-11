@@ -1,8 +1,0 @@
-<launch>
-  <group ns="localiser">
-    <node pkg="localiser" type="localiser" name="localiser" output="screen">
-        <param name="output_bag" value="/home/stew/week33.ekf.bag" />
-        <param name="input_bag" value="/media/stew/ad0a89f9-699f-4a7e-a57f-3c33d2af018e/weekly-datasets/Week33_2018-10-22/2018-10-22-15-44-17_Dataset_year.bag" />
-    </node>
-  </group>
-</launch>

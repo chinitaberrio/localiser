@@ -1,0 +1,28 @@
+<!-- in a separate terminal, do
+roslaunch zio_maps zio_maps.launch
+
+-->
+
+
+<launch>
+
+<arg name="bag_input" default="" />
+<arg name="bag_output" default="" />
+
+
+<!--  <include file="$(find zio_maps)/launch/zio_maps.launch" /> -->
+  <group ns="localiser">
+    <node pkg="localiser" type="gps_filter" name="gps_filter" output="screen" required="true">
+        <param name="output_bag" value="$(arg bag_output)" />
+        <param name="input_bag" value="$(arg bag_input)" />
+        <param name="new_yaw" value="0.0" />
+
+<!--        <param name="new_yaw" value="-0.08" />-->
+        <param name="limit_playback_speed" value="false" />
+        <param name="percentage_start" value="0" />
+        <param name="percentage_end" value="100" />
+
+
+    </node>
+  </group>
+</launch>
