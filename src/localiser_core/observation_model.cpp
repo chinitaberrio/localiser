@@ -95,7 +95,6 @@
           }
 
 
-//          ROS_WARN_STREAM("dist squared: " << std::hypot(north-previous_north, east - previous_east) << " SPEED_THRESHOLD_SQUARED " << SPEED_THRESHOLD_SQUARED);
 
           Eigen::Vector3d observation;
 
@@ -121,6 +120,8 @@
           }else{
               source = "gnss-unknown";
           }
+
+          ROS_WARN_STREAM(source << " speed " << std::hypot(north-previous_north, east - previous_east) * 10 );
 
 
           // send update to localiser method

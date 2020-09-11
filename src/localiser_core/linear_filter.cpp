@@ -249,8 +249,8 @@ UpdateStep::condition(StateEstimate &prior/*,
         "innovation sum" << innovation.array().square().sum() << std::endl << std::endl;
   */
   boost::math::chi_squared distribution(3);
-  std::cout << "statistic\n" << std::setprecision(4) << statistic
-            << std::endl;
+//  std::cout << "statistic\n" << std::setprecision(4) << statistic
+//            << std::endl;
 
   double chi_confidence = boost::math::cdf(distribution, statistic);
 
@@ -280,9 +280,9 @@ UpdateStep::condition(StateEstimate &prior/*,
 
 
   if (/*initialised_filter && */chi_confidence > confidence) {
-//    std::cout << "REJECTING SAMPLE "
-//              << std::setprecision(10) << chi_confidence << " : "
-//              << std::setprecision(10) << confidence << std::endl;
+    std::cout << "REJECTING SAMPLE "
+              << std::setprecision(10) << chi_confidence << " : "
+              << std::setprecision(10) << confidence << std::endl;
 //              << " v: " << v(0)
 //              << " z: " << z(0)
 //              << " zpred: " << zpred(0)
@@ -290,9 +290,9 @@ UpdateStep::condition(StateEstimate &prior/*,
     return false;
   }
 
-//  std::cout << "INCORPORATING SAMPLE "
-//            << std::setprecision(10) << chi_confidence << " : "
-//            << std::setprecision(10) << confidence << std::endl;
+  std::cout << "INCORPORATING SAMPLE "
+            << std::setprecision(10) << chi_confidence << " : "
+            << std::setprecision(10) << confidence << std::endl;
 
 
 //  initialised_filter = true;
@@ -613,16 +613,18 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
     size_t found_gnss = source.find("gnss");
     size_t found_rtkFix = source.find("rtkFix");
 
+    std::cout << "previous_speed: " << previous_speed << std::endl;
+
     if(found_gnss != std::string::npos  && previous_speed < 0.){
         observation(2) = observation(2) + M_PI; // 180 degrees off with true heading
     }
 
-  if (std::isnan(observation(2)) || (abs(previous_speed) < 0.1 && found_rtkFix == std::string::npos)) {
+  if (std::isnan(observation(2)) || (abs(previous_speed) < 1. /*&& found_rtkFix == std::string::npos*/)) {
 
     observation(2) = 0.;
 
     if (initialised) {
-        if (abs(previous_speed) < 0.1)
+        if (abs(previous_speed) < 1.)
             last_source = std::make_shared<std::string>(source + "-slow");
         else
             last_source = std::make_shared<std::string>(source);
@@ -669,6 +671,8 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
         zero_matrix.setZero();
         signal_stats(observation, zero_vector, covariance, zero_vector, stamp, *last_source);
     }
+
+    std::cout << "update source: " << *last_source << std::endl;
     return;
   }
 
@@ -727,7 +731,8 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
 
 //    update_step->CalculateConsensus(1.0, states);
 
-
+    // always incorporate rtkFix(still need to pass speed threshold)
+    // if not rtkFix, use confidence determined from last update
     if(found_rtkFix != std::string::npos){
         update_step->confidence = 1.;
     }else if (last_update) {
@@ -754,7 +759,7 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
                    update_step->chi_95_3d, update_step->stamp, *last_source);
     }
 
-//    ROS_INFO_STREAM("update source: " << *last_source);
+    std::cout << "update source: " << *last_source << std::endl;
 
     last_update = update_step;
 
