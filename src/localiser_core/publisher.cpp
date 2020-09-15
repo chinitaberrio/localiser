@@ -10,13 +10,13 @@ void Publisher::advertise_topics(){
 
     // advertise and insert odom_SE2_topic
     for(auto odom_SE2_topic : odom_SE2_topics){
-        ros::Publisher pose_pub = nh.advertise<nav_msgs::Odometry>(odom_SE2_topic, 1);
+        ros::Publisher pose_pub = nh.advertise<nav_msgs::Odometry>(odom_SE2_topic, 100);
         publishers.insert({odom_SE2_topic, pose_pub});
     }
 
     // advertise and insert statistics topic
     for(auto stats_topic : stats_topics){
-        ros::Publisher pub = nh.advertise<dataset_tools::LocaliserStats>(stats_topic, 1);
+        ros::Publisher pub = nh.advertise<dataset_tools::LocaliserStats>(stats_topic, 100);
         publishers.insert({stats_topic, pub});
     }
 

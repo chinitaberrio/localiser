@@ -198,7 +198,7 @@ GpsFilter::connect_layers_online() {
     // shared_ptr::get() get the raw pointer stored in shared pointer
     SourceInterface* bag_source_raw_ptr = bag_source.get();
     subscribers.push_back(n.subscribe("/vn100/imu", 100, &BagSource::receive_IMU_msg, bag_source_raw_ptr));
-    subscribers.push_back(n.subscribe("/ublox_gps/fix", 1, &BagSource::receive_fix_msg, bag_source_raw_ptr));
+    subscribers.push_back(n.subscribe("/ublox_gps/fix", 10, &BagSource::receive_fix_msg, bag_source_raw_ptr));
     subscribers.push_back(n.subscribe("/zio/odometry/rear", 100, &BagSource::receive_odom_speed_msg, bag_source_raw_ptr));
     subscribers.push_back(n.subscribe("/localiser/icp_matcher/odom_corrected", 1, &BagSource::receive_odom_SE2_msg, bag_source_raw_ptr));
     subscribers.push_back(n.subscribe("/initialpose", 1, &BagSource::receive_reset_msg, bag_source_raw_ptr));
