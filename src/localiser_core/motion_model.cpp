@@ -22,10 +22,15 @@ void MotionModel::receive_yaw_rate(double yaw_rate, double variance, ros::Time s
 void MotionModel::calculate_pose_increment(ros::Time stamp) {
   if (signal_prediction) {
 
-    double speed_horizontal = measured_speed * cos(measured_pitch);
-
     Eigen::Vector2d motion;
-    motion << speed_horizontal, measured_yaw_rate;
+    // if speed is 0, do not project it to horizontal plane, assign linear and angular velocity 0.0
+    if(measured_speed < 0.00001){
+        motion << 0.0, 0.0;
+    }else{
+        double speed_horizontal = measured_speed * cos(measured_pitch);
+        motion << speed_horizontal, measured_yaw_rate;
+    }
+
 
     float delta_time = 0.01; //(stamp - prior_stamp).toSec();
 
