@@ -163,8 +163,8 @@ public:
   float MINIMUM_INITIALISATION_SPEED = .5;
 
   // use hard coded uncertainty values from python code
-  float VELOCITY_NOISE = 12.5; // m/s
-  float YAWRATE_NOISE = 20. * (3.1415 / 180.0); // deg/s
+  float VELOCITY_NOISE = 3.5; // m/s
+  float YAWRATE_NOISE = 5. * (3.1415 / 180.0); // deg/s
   float HEADING_ERROR = 2. * (3.1415 / 180.0);// deg
   float POSITION_ERROR = 2.5; // m
 

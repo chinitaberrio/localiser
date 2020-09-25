@@ -624,13 +624,15 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
     observation(2) = 0.;
 
     if (initialised) {
-        if (abs(previous_speed) < 1.)
+        if (abs(previous_speed) < 1.){
             last_source = std::make_shared<std::string>(source + "-slow");
-        else
+            ROS_INFO_STREAM_THROTTLE(1, "reject observation due to low speed" );
+        }else{
             last_source = std::make_shared<std::string>(source);
-        ROS_INFO_STREAM_THROTTLE(1, "reject observation due to low speed/no GPS fix" );
+            ROS_INFO_STREAM_THROTTLE(1, "reject observation due to no GPS fix" );
+        }
 
-        // Add directly, this is the initialisation of the filter, so it is definitely considered valid
+        // Add directly
         std::shared_ptr<UpdateStep> update_step = std::make_shared<UpdateStep>();
 
         update_step->posterior.mean = states.back()->posterior.mean;
