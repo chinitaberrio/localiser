@@ -814,9 +814,14 @@ PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3
 
     predict_step->motion.mean = delta_state_change;
 
-    //Eigen::Matrix2d Q; //process noise
-    predict_step->motion.noise << VELOCITY_NOISE, 0.,
-                                  0., YAWRATE_NOISE;
+    //process noise
+    if(previous_speed < 0.00001){
+        predict_step->motion.noise << 0., 0.,
+                                      0., 0.;
+    }else{
+        predict_step->motion.noise << VELOCITY_NOISE, 0.,
+                                      0., YAWRATE_NOISE;
+    }
 
     float delta_time = 0.01;
     predict_step->motion.noise *= delta_time;
