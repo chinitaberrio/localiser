@@ -25,7 +25,7 @@ void MotionModel::calculate_pose_increment(ros::Time stamp) {
     Eigen::Vector2d motion;
     Eigen::Matrix2d motion_noise;
     // if speed is 0, do not project it to horizontal plane, assign linear and angular velocity 0.0
-    if(measured_speed < 0.00001){
+    if(abs(measured_speed) < 0.00001){
         motion << 0.0, 0.0;
         motion_noise << 0., 0.,
                         0., 0.;
