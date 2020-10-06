@@ -310,6 +310,7 @@ UpdateStep::condition(StateEstimate &prior/*,
 //  if (publish_statistics) {
     v_3d = v.array();
     chi_95_3d = chi_95.array();
+    chi_95_3d[0] = chi_confidence;
     covariance_3d << observed_covariance;
 //todo ///////    publish_statistics(v_3d, covariance_3d, chi_95_3d, observation.stamp);
 //  }
