@@ -165,6 +165,8 @@ public:
   // use hard coded uncertainty values from python code
   float VELOCITY_NOISE = 3.5; // m/s
   float YAWRATE_NOISE = 5. * (3.1415 / 180.0); // deg/s
+  float VELOCITY_NOISE_SLOW = 0.5; // m/s
+  float YAWRATE_NOISE_SLOW = 0.7 * (3.1415 / 180.0); // deg/s
   float HEADING_ERROR = 2. * (3.1415 / 180.0);// deg
   float POSITION_ERROR = 2.5; // m
 

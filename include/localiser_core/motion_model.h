@@ -24,9 +24,11 @@ private:
     Eigen::Vector3d vehicle_model(double distance_travelled, double delta_heading);
     Eigen::MatrixXd jacobian_matrix_fn(Eigen::Vector3d mean, Eigen::Vector2d input_state);
 
-    // use hard coded uncertainty values from python code
-    const float VELOCITY_NOISE = 2.5; // m/s
-    float YAWRATE_NOISE = 1.5 * (3.1415 / 180.0); // deg/s
+    // use hard coded uncertainty values
+    const float VELOCITY_NOISE = 3.5; // m/s
+    const float YAWRATE_NOISE = 5. * (3.1415 / 180.0); // deg/s
+    const float VELOCITY_NOISE_SLOW = 0.5; // m/s
+    const float YAWRATE_NOISE_SLOW = 0.7 * (3.1415 / 180.0); // deg/s
 
    //! The absolute measurement of the robot pitch
     double measured_pitch;

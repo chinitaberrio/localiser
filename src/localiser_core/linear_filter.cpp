@@ -620,7 +620,8 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
         observation(2) = observation(2) + M_PI; // 180 degrees off with true heading
     }
 
-  if (std::isnan(observation(2)) || (abs(previous_speed) < 1. /*&& found_rtkFix == std::string::npos*/)) {
+  if (std::isnan(observation(2)) || (abs(previous_speed) < 1. && found_rtkFix == std::string::npos)
+          || (abs(previous_speed) < 0.5 && found_rtkFix != std::string::npos)) {
 
     observation(2) = 0.;
 
@@ -734,7 +735,7 @@ PositionHeadingEKF::AddAbsolutePosition(Eigen::Vector3d& observation, Eigen::Mat
 
 //    update_step->CalculateConsensus(1.0, states);
 
-    // always incorporate rtkFix(still need to pass speed threshold)
+    // always incorporate rtkFix(do not need to pass speed threshold)
     // if not rtkFix, use confidence determined from last update
     if(found_rtkFix != std::string::npos){
         update_step->confidence = 1.;
@@ -816,9 +817,12 @@ PositionHeadingEKF::AddRelativeMotion(Eigen::Vector3d& increment, Eigen::Matrix3
     predict_step->motion.mean = delta_state_change;
 
     //process noise
-    if(abs(previous_speed) < 0.00001){
+    if(abs(previous_speed) < 0.3){
         predict_step->motion.noise << 0., 0.,
                                       0., 0.;
+    }else if(abs(previous_speed) < 0.5){
+        predict_step->motion.noise << VELOCITY_NOISE_SLOW, 0.,
+                                      0., YAWRATE_NOISE_SLOW;
     }else{
         predict_step->motion.noise << VELOCITY_NOISE, 0.,
                                       0., YAWRATE_NOISE;
