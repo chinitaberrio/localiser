@@ -25,24 +25,23 @@ void MotionModel::calculate_pose_increment(ros::Time stamp) {
     Eigen::Vector2d motion;
     Eigen::Matrix2d motion_noise;
     // if speed is 0, do not project it to horizontal plane, assign linear and angular velocity 0.0
-    if(abs(measured_speed) < 0.3){
-        motion << 0.0, 0.0;
-        motion_noise << 0., 0.,
-                        0., 0.;
-    }else{
-        double speed_horizontal = measured_speed * cos(measured_pitch);
-        motion << speed_horizontal, measured_yaw_rate;
+    
+    double speed_horizontal = measured_speed * cos(measured_pitch);
+    motion << speed_horizontal, measured_yaw_rate;
 
-        // not using covariance parsed from rosmsg, as rosmsg covariance is a fixed small value, we don't trust it
-        // using our own fixed larger covariance       
-        if(abs(measured_speed) < 0.5){
-            motion_noise << VELOCITY_NOISE_SLOW, 0.,
-                            0., YAWRATE_NOISE_SLOW;
-        }else{
-            motion_noise << VELOCITY_NOISE, 0.,
-                            0., YAWRATE_NOISE;
-        }
+    // not using covariance parsed from rosmsg, as rosmsg covariance is a fixed small value, we don't trust it
+    // using our own fixed larger covariance       
+    if(abs(measured_speed) < 0.3){
+        motion_noise << 0., 0.,
+                      0., 0.;
+    }else if(abs(measured_speed) < 0.5){
+        motion_noise << VELOCITY_NOISE_SLOW, 0.,
+                        0., YAWRATE_NOISE_SLOW;
+    }else{
+        motion_noise << VELOCITY_NOISE, 0.,
+                        0., YAWRATE_NOISE;
     }
+    
 
 
     float delta_time = 0.01; //(stamp - prior_stamp).toSec();
