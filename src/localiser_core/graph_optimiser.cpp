@@ -103,7 +103,7 @@ GraphOptimiser::GraphOptimiser() :
   gps_cov(2,2) =  9;
   mrpt::poses::CPose2D place_holder(0,0,0);
   mrpt::poses::CPosePDFGaussian gps(place_holder, gps_cov);
-  mrpt::math::CMatrixFixedNumeric< double, 3,3 > inf;
+  mrpt::math::CMatrixFixed< double, 3,3 > inf;
   //Eigen::Matrix3d< double, 3,3 > inf;
   gps.getInformationMatrix(inf);
 
@@ -211,7 +211,9 @@ GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& cova
     // calculate vehicle movement between poses
     mrpt::obs::CActionRobotMovement2D odom_move;
     mrpt::system::TTimeStamp mrpt_timestamp;
-    mrpt_bridge::convert(stamp, mrpt_timestamp);
+    mrpt_timestamp = mrpt::ros1bridge::fromROS(stamp)
+    //mrpt_bridge::convert(stamp, mrpt_timestamp);
+
     odom_move.timestamp = mrpt_timestamp;
     odom_move.computeFromOdometry(odom_incr, motion_model_options_);
 
@@ -223,7 +225,7 @@ GraphOptimiser::AddRelativeMotion(Eigen::Vector2d& motion, Eigen::Matrix2d& cova
 
     Eigen::Vector3d pose_odom(aux.mean.x(), aux.mean.y(), aux.mean.phi());
 
-    mrpt::math::CMatrixFixedNumeric< double, 3,3 > inf;
+    mrpt::math::CMatrixFixed< double, 3,3 > inf;
     aux.getInformationMatrix(inf);
     Eigen::Matrix3d information = Eigen::Matrix3d::Zero();
     for(int i = 0;i<3;i++)

@@ -8,7 +8,6 @@
 #include <string>
 
 #include <mrpt/poses/CPose2D.h>
-#include <mrpt_bridge/mrpt_bridge.h>
 
 #include <gps_common/conversions.h>
 
@@ -46,7 +45,8 @@
 #include <mrpt/obs/CActionRobotMovement2D.h>
 
 //#include <mrpt/math/CMatrixDouble33.h>
-#include <mrpt/math/CMatrixFixedNumeric.h>
+#include <mrpt/math/CMatrixFixed.h>
+//include <mrpt/math/CMatrixFixedNumeric.h>
 #include <mrpt/poses/CPosePDFGaussian.h>
 #include <mrpt/poses/CPoint2DPDFGaussian.h>
 
@@ -61,7 +61,6 @@ public:
   GraphOptimiser();
 
   ~GraphOptimiser() { global_optimizer.save("finished.g2o");}
-
 
   Eigen::Matrix3d gps_information;
 //  Eigen::Matrix3d odom_information;

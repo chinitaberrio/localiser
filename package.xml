@@ -10,6 +10,7 @@
 
   <author>Stewart Worrall</author>
   <author>Siqi Yi</author>
+  <author>Stephany Berrio</author>
 
   <buildtool_depend>catkin</buildtool_depend>
 
@@ -17,7 +18,7 @@
   <depend>rosbag</depend>
   <depend>roslib</depend>
   <depend>tf</depend>
-  <depend>mrpt_bridge</depend>
+
   <depend>gps_common</depend>
   <depend>libg2o</depend>
   <depend>std_msgs</depend>

@@ -5,7 +5,6 @@
 #include <string>
 
 #include <mrpt/poses/CPose2D.h>
-#include <mrpt_bridge/mrpt_bridge.h>
 
 #include <gps_common/conversions.h>
 
@@ -18,6 +17,8 @@
 #include <tf2/transform_datatypes.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2/utils.h>
+
+#include <eigen3/Eigen/Core>
 
 
 // TODO: vehicle model and odometry calculated in the parent class (this should be common to each method)

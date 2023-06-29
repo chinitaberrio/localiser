@@ -1,4 +1,0 @@
-<map id="PositionHeadingEKF" name="PositionHeadingEKF">
-<area shape="rect" id="node2" href="$d8/d46/classLinearFilter.html" title="{LinearFilter\n||+ LinearFilter()\l+ ~LinearFilter()\l+ AddRelativeMotion()\l+ AddAbsolutePosition()\l+ BoundHeading()\l+ vehicle_model()\l+ observation_model()\l+ transition_matrix_fn()\l+ jacobian_matrix_fn()\l}" alt="" coords="1030,476,1193,671"/>
-<area shape="rect" id="node3" href="$d2/d73/classLocalisationMethod.html" title="{LocalisationMethod\n||+ LocalisationMethod()\l}" alt="" coords="319,241,474,318"/>
-</map>

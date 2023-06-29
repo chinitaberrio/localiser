@@ -19,7 +19,7 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
 
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
-find_package(MRPT REQUIRED base gui obs slam)
+find_package(MRPT REQUIRED  gui obs slam ros1bridge)
  
 if (MRPT_VERSION VERSION_LESS 2.0.0)
   set(CMAKE_CXX_FLAGS "-Wno-deprecated-declarations ${CMAKE_CXX_FLAGS}")
@@ -37,7 +37,6 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   nav_msgs
   sensor_msgs
-  mrpt_bridge
   roslaunch
   rosbag
   tf2
@@ -45,7 +44,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 #find mrpt packages
-find_package(MRPT REQUIRED base gui obs slam)
+find_package(MRPT REQUIRED  gui obs slam ros1bridge)
 
 #if (MRPT_VERSION VERSION_LESS 2.0.0)
 #        set(CMAKE_CXX_FLAGS "-Wno-deprecated-declarations ${CMAKE_CXX_FLAGS}")
@@ -56,11 +55,15 @@ find_package(OpenCV 3 REQUIRED)
 find_package(Eigen3 REQUIRED)
 #find_package(GTSAM REQUIRED)
 
+
+
+#find_package(G2O REQUIRED)
 # Set search directory for looking for our custom CMake scripts to
 # look for SuiteSparse, QGLViewer, and Eigen3.
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules)
+SET(G2O_ROOT /usr/local/include/g2o )
+find_package(G2O)
 find_package(CSparse)
-find_package(G2O REQUIRED)
 
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 
@@ -85,7 +88,7 @@ generate_messages(
 )
 
 catkin_package(
-  CATKIN_DEPENDS nav_msgs sensor_msgs std_msgs sensor_msgs mrpt_bridge rosbag
+  CATKIN_DEPENDS nav_msgs sensor_msgs std_msgs sensor_msgs rosbag
 
   INCLUDE_DIRS include
 )

@@ -11,7 +11,6 @@
 #include <string>
 
 #include <mrpt/poses/CPose2D.h>
-#include <mrpt_bridge/mrpt_bridge.h>
 
 //#include <Eigen/Core>
 //#include <Eigen/StdVector>
@@ -24,8 +23,8 @@
 
 
 #include <mrpt/obs/CActionRobotMovement2D.h>
-
-#include <mrpt/math/CMatrixFixedNumeric.h>
+#include <mrpt/math/CMatrixFixed.h>
+//#include <mrpt/math/CMatrixFixedNumeric.h>
 #include <mrpt/poses/CPosePDFGaussian.h>
 
 

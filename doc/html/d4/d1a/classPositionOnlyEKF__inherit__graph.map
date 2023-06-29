@@ -1,4 +1,0 @@
-<map id="PositionOnlyEKF" name="PositionOnlyEKF">
-<area shape="rect" id="node2" href="$d8/d46/classLinearFilter.html" title="{LinearFilter\n|+ initialised\l+ MINIMUM_INITIALISATION\l_SPEED\l+ VELOCITY_NOISE\l+ YAWRATE_NOISE\l+ HEADING_ERROR\l+ POSITION_ERROR\l+ state_odom_only\l+ states\l+ previous_speed\l+ initialised_filter\l+ confidence\l# last_update\l# last_predict\l|+ LinearFilter()\l+ ~LinearFilter()\l+ AddRelativeMotion()\l+ AddAbsolutePosition()\l+ BoundHeading()\l+ vehicle_model()\l+ observation_model()\l+ transition_matrix_fn()\l+ jacobian_matrix_fn()\l}" alt="" coords="5,263,208,648"/>
-<area shape="rect" id="node3" href="$d2/d73/classLocalisationMethod.html" title="{LocalisationMethod\n|+ publish_odometry\l+ publish_map\l+ publish_statistics\l+ map_state\l+ odom_state_eigen\l+ odom_state\l+ previous_prediction\l_stamp\l+ previous_observation\l_stamp\l|+ LocalisationMethod()\l}" alt="" coords="28,5,185,215"/>
-</map>

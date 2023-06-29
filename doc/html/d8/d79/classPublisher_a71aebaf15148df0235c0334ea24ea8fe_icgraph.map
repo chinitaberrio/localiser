@@ -1,5 +1,0 @@
-<map id="Publisher::publish_odom" name="Publisher::publish_odom">
-<area shape="rect" id="node2" href="$db/d3c/classROSLocaliser.html#a87eb20c0496eb78fbf79b02047b0583d" title="ROSLocaliser::Initialise" alt="" coords="217,5,376,32"/>
-<area shape="rect" id="node4" href="$d8/d79/classPublisher.html#a5538d94fb8d594575be67e6edd7166df" title="Publisher::Publisher" alt="" coords="227,56,366,83"/>
-<area shape="rect" id="node3" href="$d9/d12/ros__localiser_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627" title="main" alt="" coords="424,5,475,32"/>
-</map>
